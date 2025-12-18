@@ -7,6 +7,7 @@ import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow, formatDate } from 'date-fns';
 import axios from 'axios';
 import { parseUTC } from '../lib/timezone';
+import api from '../lib/api';
 
 const getStatusBadge = (status) => {
   switch (status) {
@@ -34,7 +35,7 @@ const MonitorHistoryDialog = ({ open, onOpenChange, monitor }) => {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/monitors/${monitor.id}/history`);
+      const response = await api.get(`/api/monitors/${monitor.id}/history`);
       setHistory(Array.isArray(response.data) ? response.data : response.data.history || []);
     } catch (error) {
       console.error('Error fetching history:', error);

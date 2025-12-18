@@ -15,6 +15,7 @@ import axios from 'axios';
 import { parseUTC } from '../lib/timezone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import api from '../lib/api';
 
 const getStatusInfo = (status) => {
   switch (status) {
@@ -58,7 +59,7 @@ const MonitorCard = ({ monitor, onDelete }) => {
 
   const { data: uptimeData, isLoading: uptimeLoading } = useQuery({
     queryKey: ['monitor-uptime', monitor.id],
-    queryFn: () => axios.get(`/api/monitors/${monitor.id}/uptime`).then(res => res.data),
+    queryFn: () => api.get(`/api/monitors/${monitor.id}/uptime`).then(res => res.data),
     refetchInterval: 30000,
   });
 
@@ -66,7 +67,7 @@ const MonitorCard = ({ monitor, onDelete }) => {
 
   const { data: uptimeChartData = [] } = useQuery({
     queryKey: ['monitor-uptime-chart', monitor.id],
-    queryFn: () => axios.get(`/api/monitors/${monitor.id}/chart/uptime`).then(res => 
+    queryFn: () => api.get(`/api/monitors/${monitor.id}/chart/uptime`).then(res => 
       res.data.map(item => ({
         ...item,
         time: parseUTC(item.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
@@ -77,7 +78,7 @@ const MonitorCard = ({ monitor, onDelete }) => {
 
   const { data: responseTimeChartData = [] } = useQuery({
     queryKey: ['monitor-response-time-chart', monitor.id],
-    queryFn: () => axios.get(`/api/monitors/${monitor.id}/chart/response-time`).then(res => 
+    queryFn: () => api.get(`/api/monitors/${monitor.id}/chart/response-time`).then(res => 
       res.data.map(item => ({
         ...item,
         time: parseUTC(item.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
@@ -87,7 +88,7 @@ const MonitorCard = ({ monitor, onDelete }) => {
   });
 
   const pauseMutation = useMutation({
-    mutationFn: (paused) => axios.patch(`/api/monitors/${monitor.id}/pause`, { paused }),
+    mutationFn: (paused) => api.patch(`/api/monitors/${monitor.id}/pause`, { paused }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
     },

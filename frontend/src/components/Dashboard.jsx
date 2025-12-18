@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
+import api from "../lib/api";
 
 const Dashboard = ({ theme, setTheme }) => {
   const queryClient = useQueryClient();
@@ -30,7 +31,7 @@ const Dashboard = ({ theme, setTheme }) => {
 
   const { data: monitors = [], isLoading, error, refetch } = useQuery({
     queryKey: ['monitors'],
-    queryFn: () => axios.get('/api/monitors').then(res => res.data),
+    queryFn: () => api.get('/api/monitors').then(res => res.data),
     refetchInterval: 30000,
   });
 
@@ -45,7 +46,7 @@ const Dashboard = ({ theme, setTheme }) => {
   };
 
   const deleteMonitorMutation = useMutation({
-    mutationFn: (id) => axios.delete(`/api/monitors/${id}`),
+    mutationFn: (id) => api.delete(`/api/monitors/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
     },

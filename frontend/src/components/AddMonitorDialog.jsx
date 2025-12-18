@@ -15,6 +15,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Plus, Globe, Type, Zap, X, Network, Server, Wifi } from 'lucide-react';
+import api from '../lib/api';
 
 const AddMonitorDialog = () => {
   const [open, setOpen] = useState(false);
@@ -28,7 +29,7 @@ const AddMonitorDialog = () => {
   });
 
   const addMonitorMutation = useMutation({
-    mutationFn: (data) => axios.post('/api/monitors', { ...data, type: monitorType }),
+    mutationFn: (data) => api.post('/api/monitors', { ...data, type: monitorType }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
       setOpen(false);
