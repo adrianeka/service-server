@@ -15,6 +15,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.send('UptimeKit backend is running 🚀');
+});
+
 async function fetchFavicon(url) {
   try {
     const response = await axios.get(url, { timeout: 5000 });
