@@ -394,6 +394,6 @@ app.get('/api/monitors/:id/downtime', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`UptimeKit backend server running on port ${PORT}`);
 });
