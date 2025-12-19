@@ -23,7 +23,6 @@ function App() {
     }
     localStorage.setItem('theme', theme);
   }, [theme]);
-console.log(import.meta.env.VITE_BACKEND_URL);
 
   return (
     <QueryClientProvider client={queryClient}>
