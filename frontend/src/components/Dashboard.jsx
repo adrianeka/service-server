@@ -31,7 +31,21 @@ const Dashboard = ({ theme, setTheme }) => {
 
   const { data: monitors = [], isLoading, error, refetch } = useQuery({
     queryKey: ['monitors'],
-    queryFn: () => api.get('/api/monitors').then(res => res.data),
+    queryFn: async () => {
+      try {
+        const res = await api.get('/api/monitors');
+        const data = res.data;
+        // Memastikan data selalu array
+        if (!Array.isArray(data)) {
+          console.warn('API returned non-array data:', data);
+          return [];
+        }
+        return data;
+      } catch (err) {
+        console.error('Error fetching monitors:', err);
+        return [];
+      }
+    },
     refetchInterval: 30000,
   });
 
@@ -61,14 +75,17 @@ const Dashboard = ({ theme, setTheme }) => {
     }
   };
 
+  // Memastikan monitors selalu array
+  const safeMonitors = Array.isArray(monitors) ? monitors : [];
+
   // Aggregate statistics
   const stats = {
-    total: monitors.length,
-    up: monitors.filter(m => m.status === 'up').length,
-    down: monitors.filter(m => m.status === 'down').length,
-    slow: monitors.filter(m => m.status === 'slow').length,
-    avgResponseTime: monitors.length > 0 
-      ? Math.round(monitors.reduce((acc, m) => acc + m.response_time, 0) / monitors.length)
+    total: safeMonitors.length,
+    up: safeMonitors.filter(m => m.status === 'up').length,
+    down: safeMonitors.filter(m => m.status === 'down').length,
+    slow: safeMonitors.filter(m => m.status === 'slow').length,
+    avgResponseTime: safeMonitors.length > 0 
+      ? Math.round(safeMonitors.reduce((acc, m) => acc + (m.response_time || 0), 0) / safeMonitors.length)
       : 0,
   };
 
@@ -85,32 +102,32 @@ const Dashboard = ({ theme, setTheme }) => {
     return Math.round(sorted[lower] * (1 - weight) + sorted[upper] * weight);
   };
 
-  const responseTimes = monitors.map(m => typeof m.response_time === 'number' ? m.response_time : 0).filter(x => x > 0);
+  const responseTimes = safeMonitors.map(m => typeof m.response_time === 'number' ? m.response_time : 0).filter(x => x > 0);
   stats.p95Response = computePercentile(responseTimes, 95) || 0;
-  const uptimePercent = monitors.length > 0 ? (stats.up / stats.total) * 100 : 0;
-  const issuesPercent = monitors.length > 0 ? (stats.issues / stats.total) * 100 : 0;
+  const uptimePercent = safeMonitors.length > 0 ? (stats.up / stats.total) * 100 : 0;
+  const issuesPercent = safeMonitors.length > 0 ? (stats.issues / stats.total) * 100 : 0;
   const maxLatency = 2000;
   const latencyNormalized = Math.max(0, Math.min(1, 1 - (stats.p95Response / maxLatency)));
   const weights = { uptime: 0.5, issues: 0.3, latency: 0.2 };
-  const healthRaw = monitors.length > 0 ? (
+  const healthRaw = safeMonitors.length > 0 ? (
     (uptimePercent / 100) * weights.uptime
     + (1 - (issuesPercent / 100)) * weights.issues
     + latencyNormalized * weights.latency
   ) : null;
   stats.healthScore = healthRaw === null ? null : Math.round(healthRaw * 100);
 
-  const uptime = monitors.length > 0 ? ((stats.up / stats.total) * 100).toFixed(1) : 0;
+  const uptime = safeMonitors.length > 0 ? ((stats.up / stats.total) * 100).toFixed(1) : 0;
 
   const getFilteredMonitors = () => {
     switch(activeTab) {
       case 'up':
-        return monitors.filter(m => m.status === 'up');
+        return safeMonitors.filter(m => m.status === 'up');
       case 'down':
-        return monitors.filter(m => m.status === 'down');
+        return safeMonitors.filter(m => m.status === 'down');
       case 'slow':
-        return monitors.filter(m => m.status === 'slow');
+        return safeMonitors.filter(m => m.status === 'slow');
       default:
-        return monitors;
+        return safeMonitors;
     }
   };
 
@@ -130,6 +147,11 @@ const Dashboard = ({ theme, setTheme }) => {
   };
 
   const applySavedOrder = (monitorsList) => {
+    // Memastikan monitorsList selalu array
+    if (!Array.isArray(monitorsList)) {
+      console.warn('applySavedOrder received non-array:', monitorsList);
+      return [];
+    }
     const saved = getSavedOrder();
     if (!Array.isArray(saved) || saved.length === 0) return monitorsList;
     const savedSet = new Set(saved.map(s => Number(s)));
@@ -148,10 +170,11 @@ const Dashboard = ({ theme, setTheme }) => {
 
   // Helper to update saved order
   const updateSavedOrderForSwap = (swappedArray) => {
-    const currentIds = monitors.map(m => Number(m.id));
+    const currentIds = safeMonitors.map(m => Number(m.id));
     try {
       if (!Array.isArray(swappedArray)) return;
       const saved = getSavedOrder();
+      if (!Array.isArray(saved)) return;
       const dedupedSwapped = Array.from(new Set(swappedArray.map(Number))).map(Number);
       const newOrder = [
         ...dedupedSwapped,
@@ -165,16 +188,17 @@ const Dashboard = ({ theme, setTheme }) => {
   };
 
   useEffect(() => {
-    if (isLoading || monitors.length === 0) return;
-    const currentIds = monitors.map(m => Number(m.id));
+    if (isLoading || safeMonitors.length === 0) return;
+    const currentIds = safeMonitors.map(m => Number(m.id));
     const saved = getSavedOrder();
+    if (!Array.isArray(saved)) return;
     const newSaved = [
       ...saved.filter(id => currentIds.includes(id)),
       ...currentIds.filter(id => !saved.includes(id))
     ];
     const deduped = Array.from(new Set(newSaved));
     localStorage.setItem('monitorOrder', JSON.stringify(deduped));
-  }, [monitors, isLoading]);
+  }, [safeMonitors, isLoading]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -188,7 +212,7 @@ const Dashboard = ({ theme, setTheme }) => {
         swapyRef.current = createSwapy(containerRef.current, { animation: 'dynamic' });
         swapyRef.current.onSwap((event) => {
           const arr = (event?.newSlotItemMap?.asArray || []).map(x => Number(x.item));
-          if (arr && arr.length) updateSavedOrderForSwap(arr);
+          if (Array.isArray(arr) && arr.length) updateSavedOrderForSwap(arr);
         });
       } catch (e) {
         console.error('Swapy init error:', e);
@@ -199,7 +223,7 @@ const Dashboard = ({ theme, setTheme }) => {
       swapyRef.current?.destroy?.();
       swapyRef.current = null;
     };
-  }, [containerRef, activeTab, monitors.length]);
+  }, [containerRef, activeTab, safeMonitors.length]);
 
   if (isLoading) {
     return (
@@ -353,7 +377,7 @@ const Dashboard = ({ theme, setTheme }) => {
         </div>
       </div>
 
-      {monitors.length > 0 && (
+      {safeMonitors.length > 0 && (
         <div className="border-b bg-muted/30">
           <div className="container mx-auto px-4 py-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -436,7 +460,7 @@ const Dashboard = ({ theme, setTheme }) => {
         </div>
       )}      {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        {monitors.length === 0 ? (
+        {safeMonitors.length === 0 ? (
           <div className="text-center py-16">
             <Card className="max-w-md mx-auto">
               <CardContent className="pt-12 pb-12">
