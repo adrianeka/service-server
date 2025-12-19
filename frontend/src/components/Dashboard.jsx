@@ -131,7 +131,7 @@ const Dashboard = ({ theme, setTheme }) => {
     }
   };
 
-  const filteredMonitors = getFilteredMonitors();
+  const filteredMonitors = Array.isArray(getFilteredMonitors()) ? getFilteredMonitors() : [];
 
 
   const getSavedOrder = () => {
@@ -166,7 +166,7 @@ const Dashboard = ({ theme, setTheme }) => {
     return ordered;
   };
 
-  const orderedMonitors = applySavedOrder(filteredMonitors);
+  const orderedMonitors = applySavedOrder(filteredMonitors || []);
 
   // Helper to update saved order
   const updateSavedOrderForSwap = (swappedArray) => {
