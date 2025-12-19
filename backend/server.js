@@ -11,7 +11,8 @@ const PORT = process.env.PORT || 3000;
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://uptime-kit.vercel.app"
+  "https://uptime-kit.vercel.app",
+  "https://uptime-kit.jiwamu.de"
 ];
 
 app.use(cors({
