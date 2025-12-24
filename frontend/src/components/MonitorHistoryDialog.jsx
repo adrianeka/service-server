@@ -5,9 +5,8 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow, formatDate } from 'date-fns';
-import axios from 'axios';
 import { parseUTC } from '../lib/timezone';
-import api from '../lib/api';
+import ApiService from '../service/ApiService';
 
 const getStatusBadge = (status) => {
   switch (status) {
@@ -35,8 +34,8 @@ const MonitorHistoryDialog = ({ open, onOpenChange, monitor }) => {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/api/monitors/${monitor.id}/history`);
-      setHistory(Array.isArray(response.data) ? response.data : response.data.history || []);
+      const data = await ApiService.getMonitorHistory(monitor.id);
+      setHistory(Array.isArray(data) ? data : data.history || []);
     } catch (error) {
       console.error('Error fetching history:', error);
       setHistory([]);

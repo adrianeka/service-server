@@ -1,22 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { BarChart3, Clock } from 'lucide-react';
-import api from '../lib/api';
+import ApiService from '../service/ApiService';
 
 const MonitorChartsDialog = ({ monitor, open, onOpenChange }) => {
   const { data: uptimeChartData = [] } = useQuery({
     queryKey: ['monitor-uptime-chart', monitor?.id],
-    queryFn: () => api.get(`/api/monitors/${monitor.id}/chart/uptime`).then(res => res.data),
+    queryFn: () => ApiService.getMonitorUptimeChart(monitor.id),
     enabled: !!monitor && open,
     refetchInterval: 60000,
   });
 
   const { data: responseTimeChartData = [] } = useQuery({
     queryKey: ['monitor-response-time-chart', monitor?.id],
-    queryFn: () => api.get(`/api/monitors/${monitor.id}/chart/response-time`).then(res => res.data),
+    queryFn: () => ApiService.getMonitorResponseTimeChart(monitor.id),
     enabled: !!monitor && open,
     refetchInterval: 60000,
   });

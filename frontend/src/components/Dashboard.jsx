@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { useState, useRef, useEffect } from 'react';
 import { createSwapy } from 'swapy';
 import MonitorCard from './MonitorCard';
@@ -19,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
-import api from "../lib/api";
+import ApiService from "../service/ApiService";
 
 const Dashboard = ({ theme, setTheme }) => {
   const queryClient = useQueryClient();
@@ -33,9 +32,7 @@ const Dashboard = ({ theme, setTheme }) => {
     queryKey: ['monitors'],
     queryFn: async () => {
       try {
-        const res = await api.get('/api/monitors');
-        const data = res.data;
-        // Memastikan data selalu array
+        const data = await ApiService.getMonitors();
         if (!Array.isArray(data)) {
           console.warn('API returned non-array data:', data);
           return [];
@@ -60,7 +57,7 @@ const Dashboard = ({ theme, setTheme }) => {
   };
 
   const deleteMonitorMutation = useMutation({
-    mutationFn: (id) => api.delete(`/api/monitors/${id}`),
+    mutationFn: (id) => ApiService.deleteMonitor(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
     },
