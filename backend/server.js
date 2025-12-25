@@ -11,8 +11,12 @@ const PORT = process.env.PORT || 3000;
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:4173", // vite preview default port
   "https://uptime-kit.vercel.app",
-  "https://uptime-kit.jiwamu.de"
+  "https://uptime-kit.jiwamu.de",
+  ...(process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim()).filter(Boolean)
+    : []),
 ];
 
 app.use(cors({

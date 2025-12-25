@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
-import ApiService from "../service/ApiService";
+import { getMonitors, deleteMonitor } from "../service/ApiService";
 
 const Dashboard = ({ theme, setTheme }) => {
   const queryClient = useQueryClient();
@@ -32,7 +32,7 @@ const Dashboard = ({ theme, setTheme }) => {
     queryKey: ['monitors'],
     queryFn: async () => {
       try {
-        const data = await ApiService.getMonitors();
+        const data = await getMonitors();
         if (!Array.isArray(data)) {
           console.warn('API returned non-array data:', data);
           return [];
@@ -57,7 +57,7 @@ const Dashboard = ({ theme, setTheme }) => {
   };
 
   const deleteMonitorMutation = useMutation({
-    mutationFn: (id) => ApiService.deleteMonitor(id),
+    mutationFn: (id) => deleteMonitor(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
     },

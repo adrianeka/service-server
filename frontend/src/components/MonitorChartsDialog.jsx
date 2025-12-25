@@ -3,19 +3,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { BarChart3, Clock } from 'lucide-react';
-import ApiService from '../service/ApiService';
+import { getMonitorUptimeChart, getMonitorResponseTimeChart } from '../service/ApiService';
 
 const MonitorChartsDialog = ({ monitor, open, onOpenChange }) => {
   const { data: uptimeChartData = [] } = useQuery({
     queryKey: ['monitor-uptime-chart', monitor?.id],
-    queryFn: () => ApiService.getMonitorUptimeChart(monitor.id),
+    queryFn: () => getMonitorUptimeChart(monitor.id),
     enabled: !!monitor && open,
     refetchInterval: 60000,
   });
 
   const { data: responseTimeChartData = [] } = useQuery({
     queryKey: ['monitor-response-time-chart', monitor?.id],
-    queryFn: () => ApiService.getMonitorResponseTimeChart(monitor.id),
+    queryFn: () => getMonitorResponseTimeChart(monitor.id),
     enabled: !!monitor && open,
     refetchInterval: 60000,
   });

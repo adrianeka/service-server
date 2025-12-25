@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Card, CardContent } from './ui/card';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Globe, Network, Wifi } from 'lucide-react';
-import ApiService from '../service/ApiService';
+import { updateMonitor } from '../service/ApiService';
 
 const EditMonitorDialog = ({ open, onOpenChange, monitor }) => {
   const [name, setName] = useState('');
@@ -25,7 +25,7 @@ const EditMonitorDialog = ({ open, onOpenChange, monitor }) => {
   }, [monitor, open]);
 
   const updateMutation = useMutation({
-    mutationFn: () => ApiService.updateMonitor(monitor.id, { name, url, type: monitorType }),
+    mutationFn: () => updateMonitor(monitor.id, { name, url, type: monitorType }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
       onOpenChange(false);

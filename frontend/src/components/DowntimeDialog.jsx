@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertTriangle, Clock, Calendar } from 'lucide-react';
 import { parseUTC } from '../lib/timezone';
 import { formatDistanceToNow } from 'date-fns';
-import ApiService from '../service/ApiService';
+import { getMonitorDowntime } from '../service/ApiService';
 
 const DowntimeDialog = ({ monitorId, isOpen, onClose }) => {
   const [downtimes, setDowntimes] = useState([]);
@@ -13,8 +13,8 @@ const DowntimeDialog = ({ monitorId, isOpen, onClose }) => {
     if (!isOpen) return;
     
     setLoading(true);
-    ApiService.getMonitorDowntime(monitorId)
-      .then((data) => setDowntimes(data?.downtimes || []))
+    getMonitorDowntime(monitorId)
+      .then((data) => setDowntimes(Array.isArray(data) ? data : []))
       .catch((err) => console.error('Error fetching downtime:', err))
       .finally(() => setLoading(false));
   }, [isOpen, monitorId]);

@@ -14,7 +14,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Plus, Globe, Type, Zap, X, Network, Server, Wifi } from 'lucide-react';
-import ApiService from '../service/ApiService';
+import { createMonitor } from '../service/ApiService';
 
 const AddMonitorDialog = () => {
   const [open, setOpen] = useState(false);
@@ -28,7 +28,7 @@ const AddMonitorDialog = () => {
   });
 
   const addMonitorMutation = useMutation({
-    mutationFn: (data) => ApiService.addMonitor({ ...data, type: monitorType }),
+    mutationFn: (data) => createMonitor({ ...data, type: monitorType }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
       setOpen(false);

@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { parseUTC } from '../lib/timezone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-import ApiService from '../service/ApiService';
+import { getMonitorUptime, getMonitorUptimeChart, getMonitorResponseTimeChart, pauseMonitor } from '../service/ApiService';
 
 const getStatusInfo = (status) => {
   switch (status) {
@@ -58,7 +58,7 @@ const MonitorCard = ({ monitor, onDelete }) => {
 
   const { data: uptimeData, isLoading: uptimeLoading } = useQuery({
     queryKey: ['monitor-uptime', monitor.id],
-    queryFn: () => ApiService.getMonitorUptime(monitor.id),
+    queryFn: () => getMonitorUptime(monitor.id),
     refetchInterval: 30000,
   });
 
@@ -66,28 +66,18 @@ const MonitorCard = ({ monitor, onDelete }) => {
 
   const { data: uptimeChartData = [] } = useQuery({
     queryKey: ['monitor-uptime-chart', monitor.id],
-    queryFn: () => ApiService.getMonitorUptimeChart(monitor.id).then(data =>
-      data.map(item => ({
-        ...item,
-        time: parseUTC(item.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-      }))
-    ),
+    queryFn: () => getMonitorUptimeChart(monitor.id),
     refetchInterval: 60000,
   });
 
   const { data: responseTimeChartData = [] } = useQuery({
     queryKey: ['monitor-response-time-chart', monitor.id],
-    queryFn: () => ApiService.getMonitorResponseTimeChart(monitor.id).then(data =>
-      data.map(item => ({
-        ...item,
-        time: parseUTC(item.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-      }))
-    ),
+    queryFn: () => getMonitorResponseTimeChart(monitor.id),
     refetchInterval: 60000,
   });
 
   const pauseMutation = useMutation({
-    mutationFn: (paused) => ApiService.pauseMonitor(monitor.id, paused),
+    mutationFn: (paused) => pauseMonitor(monitor.id, paused),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
     },
