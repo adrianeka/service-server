@@ -34,7 +34,7 @@ export default function Navbar() {
   
   const t = translations[currentLanguage]
   return (
-    <div className="sticky top-0 z-50 border-b bg-white shadow-sm">
+    <div className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
 
@@ -76,7 +76,7 @@ export default function Navbar() {
                         className="fixed inset-0 z-10"
                         onClick={() => setIsLangDropdownOpen(false)}
                       />
-                      <div className="absolute right-0 mt-2 w-36 rounded-md border border-gray-200 bg-white py-1 shadow-md z-20">
+                      <div className="absolute right-0 mt-2 w-36 rounded-md  bg-white py-1 shadow-md z-20">
                         <button
                           onClick={() => {
                             setCurrentLanguage("English")

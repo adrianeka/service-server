@@ -56,7 +56,7 @@ const AddMonitorDialog = () => {
           </Button>
         </div>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] gap-0 p-0 overflow-hidden">
+      <DialogContent className="w-[500px] h-[650px] gap-0 p-0 overflow-hidden">        
         <div className="bg-primary px-6 py-4">
           <DialogHeader className="border-0">
             <DialogTitle className="text-2xl text-primary-foreground flex items-center gap-2">
@@ -117,7 +117,6 @@ const AddMonitorDialog = () => {
 
           <div className="space-y-3">
             <Label htmlFor="name" className="flex items-center gap-2 font-semibold">
-              <Type className="h-4 w-4 text-primary" />
               Name
             </Label>
             <Input
@@ -141,7 +140,6 @@ const AddMonitorDialog = () => {
           
           <div className="space-y-3">
             <Label htmlFor="url" className="flex items-center gap-2 font-semibold">
-              {monitorType === 'dns' ? <Network className="h-4 w-4 text-primary" /> : monitorType === 'icmp' ? <Wifi className="h-4 w-4 text-primary" /> : <Globe className="h-4 w-4 text-primary" />}
               {monitorType === 'dns' ? 'Domain to Monitor' : monitorType === 'icmp' ? 'Host to Ping' : 'URL to Monitor'}
             </Label>
             <Input
@@ -164,14 +162,51 @@ const AddMonitorDialog = () => {
                 ⚠ {errors.url.message}
               </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              {monitorType === 'dns' 
-                ? '🔍 DNS resolution checked every minute • Resolution time tracked • Auto status updates'
-                : monitorType === 'icmp'
-                ? '📡 ICMP ping checked every minute • Response time tracked • Auto status updates'
-                : '🔍 Checked every minute • Response time tracked • Auto status updates'
-              }
-            </p>
+          </div>
+          <div className="space-y-3">
+            <Label htmlFor="name" className="flex items-center gap-2 font-semibold">
+              Heartbeat Interval (Check every 60 second)
+            </Label>
+            <Input
+              id="name"
+              placeholder={monitorType === 'dns' ? 'My DNS Server' : monitorType === 'icmp' ? 'My Ping Monitor' : 'My API Server'}
+              className="h-11 border-2 border-muted hover:border-primary transition-colors"
+              {...register('name', { 
+                required: 'Please give your monitor a name',
+                minLength: {
+                  value: 2,
+                  message: 'Name should be at least 2 characters'
+                }
+              })}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive font-medium">
+                ⚠ {errors.name.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <Label htmlFor="name" className="flex items-center gap-2 font-semibold">
+              Notification
+            </Label>
+            <Input
+              id="name"
+              placeholder={monitorType === 'dns' ? 'My DNS Server' : monitorType === 'icmp' ? 'My Ping Monitor' : 'My API Server'}
+              className="h-11 border-2 border-muted hover:border-primary transition-colors"
+              {...register('name', { 
+                required: 'Please give your monitor a name',
+                minLength: {
+                  value: 2,
+                  message: 'Name should be at least 2 characters'
+                }
+              })}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive font-medium">
+                ⚠ {errors.name.message}
+              </p>
+            )}
           </div>
 
           <DialogFooter className="gap-3 pt-4">

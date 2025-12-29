@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './components/Dashboard';
+import DashboardPage from './page/DashboardPage';
 import TestPage from './testpage/page';
 import { TooltipProvider } from './components/ui/tooltip';
 import './App.css';
+import LoginPage from './page/LoginPage';
+import RegisterPage from './page/RegisterPage';
 
 const queryClient = new QueryClient();
 
@@ -33,8 +35,10 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<TestPage />} />
-              <Route path="/Login" element={<TestPage />} />
-              <Route path="/dashboard" element={<Dashboard theme={theme} setTheme={setTheme} />} />
+              <Route path="/Login" element={<LoginPage />} />
+              <Route path="/Register" element={<RegisterPage />} />
+              <Route path="/dashboard" element={<DashboardPage theme={theme} setTheme={setTheme} />} />
+              <Route path="/Dashboard1" element={<DashboardPage theme={theme} setTheme={setTheme} />} />
             </Routes>
           </Router>
         </div>
