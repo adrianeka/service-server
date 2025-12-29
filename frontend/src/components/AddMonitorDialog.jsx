@@ -49,7 +49,7 @@ const AddMonitorDialog = () => {
       <DialogTrigger asChild>
         <div className="md:w-auto w-auto">
           <Button 
-            className="md:size-auto md:gap-2 md:px-6 md:py-2 md:h-10 h-10 w-10 md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all flex md:flex items-center justify-center"
+            className="md:size-auto md:gap-2 md:px-6 md:py-2 md:h-10 h-10 w-10 md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center rounded-full"
           >
             <Plus className="h-5 w-5" />
             <span className="font-semibold hidden md:inline ml-2">Add Monitor</span>
