@@ -30,6 +30,14 @@ const {
   createUser,
   updateUser,
   deleteUser,
+  getAllMonitorsForAdmin,
+  checkMonitorOwnership,
+  getMonitorNotificationSettings,
+  getNotificationSetting,
+  createNotificationSetting,
+  updateNotificationSetting,
+  deleteNotificationSetting,
+  checkNotificationSettingOwnership,
 } = require("./database");
 
 const app = express();
@@ -306,11 +314,15 @@ async function fetchFavicon(url) {
   }
 }
 
-app.get("/api/monitors", (req, res) => {
-  getAllMonitors((err, rows) => {
+app.get("/api/monitors", authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  getAllMonitors(userId, (err, rows) => {
     if (err) {
       console.error("Error fetching monitors:", err.message);
-      return res.status(500).json({ error: "Failed to fetch monitors" });
+      return res.status(500).json({
+        status: false,
+        error: "Failed to fetch monitors",
+      });
     }
     const monitorsWithType = rows.map((monitor) => ({
       ...monitor,
@@ -321,13 +333,15 @@ app.get("/api/monitors", (req, res) => {
   });
 });
 
-app.post("/api/monitors", async (req, res) => {
+app.post("/api/monitors", authenticateToken, async (req, res) => {
   const { name, url, type = "http" } = req.body;
+  const userId = req.user.id;
+
   if (!name || !url) {
     return res.status(400).json({ error: "Name and URL are required" });
   }
 
-  addMonitor(name, url, type, (err, id) => {
+  addMonitor(name, url, type, userId, (err, id) => {
     if (err) {
       console.error("Error adding monitor:", err.message);
       if (err.message && err.message.includes("UNIQUE constraint failed")) {
@@ -342,7 +356,7 @@ app.post("/api/monitors", async (req, res) => {
       fetchFavicon(url)
         .then((favicon) => {
           if (favicon) {
-            updateMonitorFavicon(id, favicon, (updateErr) => {
+            updateMonitorFavicon(id, favicon, userId, (updateErr) => {
               if (updateErr) {
                 console.error("Error updating favicon:", updateErr.message);
               }
@@ -368,20 +382,37 @@ app.post("/api/monitors", async (req, res) => {
   });
 });
 
-app.delete("/api/monitors/:id", (req, res) => {
+app.delete("/api/monitors/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
-  deleteMonitor(id, (err) => {
+  const userId = req.user.id;
+
+  deleteMonitor(id, userId, (err, changes) => {
     if (err) {
       console.error("Error deleting monitor:", err.message);
-      return res.status(500).json({ error: "Failed to delete monitor" });
+      return res.status(500).json({
+        status: false,
+        error: "Failed to delete monitor. Please try again.",
+      });
     }
-    res.json({ message: "Monitor deleted successfully" });
+
+    if (changes === 0) {
+      return res.status(404).json({
+        status: false,
+        error: "Monitor not found or you don't have permission to delete it",
+      });
+    }
+
+    res.json({
+      status: true,
+      message: "Monitor deleted successfully",
+    });
   });
 });
 
-app.get("/api/monitors/:id/uptime", (req, res) => {
+app.get("/api/monitors/:id/uptime", authenticateToken, (req, res) => {
   const { id } = req.params;
-  getUptimePercentage(id, (err, percentage) => {
+  const userId = req.user.id;
+  getUptimePercentage(id, userId, (err, percentage) => {
     if (err) {
       console.error("Error fetching uptime:", err.message);
       return res.status(500).json({ error: "Failed to fetch uptime" });
@@ -390,8 +421,9 @@ app.get("/api/monitors/:id/uptime", (req, res) => {
   });
 });
 
-app.get("/api/charts/uptime", (req, res) => {
-  getUptimeChartData((err, data) => {
+app.get("/api/charts/uptime", authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  getUptimeChartData(userId, (err, data) => {
     if (err) {
       console.error("Error fetching uptime chart data:", err.message);
       return res.status(500).json({ error: "Failed to fetch uptime data" });
@@ -400,8 +432,9 @@ app.get("/api/charts/uptime", (req, res) => {
   });
 });
 
-app.get("/api/charts/response-time", (req, res) => {
-  getResponseTimeChartData((err, data) => {
+app.get("/api/charts/response-time", authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  getResponseTimeChartData(userId, (err, data) => {
     if (err) {
       console.error("Error fetching response time data:", err.message);
       return res
@@ -412,34 +445,51 @@ app.get("/api/charts/response-time", (req, res) => {
   });
 });
 
-app.put("/api/monitors/:id", (req, res) => {
+app.put("/api/monitors/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { name, url, type = "http" } = req.body;
+  const userId = req.user.id;
+
   if (!name || !url) {
     return res.status(400).json({ error: "Name and URL are required" });
   }
-  updateMonitor(id, name, url, type, (err) => {
+
+  updateMonitor(id, name, url, type, req.user, (err) => {
     if (err) {
-      console.error("Error updating monitor:", err.message);
-      if (err.message && err.message.includes("UNIQUE constraint failed")) {
-        return res
-          .status(400)
-          .json({ error: "A monitor with this URL and type already exists" });
+      if (err.message === "FORBIDDEN") {
+        return res.status(403).json({ error: "Access denied" });
       }
+
+      if (err.message.includes("UNIQUE constraint failed")) {
+        return res.status(400).json({
+          error: "You already have a monitor with this URL and type",
+        });
+      }
+
       return res.status(500).json({ error: "Failed to update monitor" });
     }
+
     res.json({ message: "Monitor updated successfully" });
   });
 });
 
-app.patch("/api/monitors/:id/pause", (req, res) => {
+app.patch("/api/monitors/:id/pause", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { paused } = req.body;
-  toggleMonitorPause(id, paused, (err) => {
+  const userId = req.user.id;
+
+  toggleMonitorPause(id, paused, userId, (err, changes) => {
     if (err) {
       console.error("Error updating pause status:", err.message);
       return res.status(500).json({ error: "Failed to update pause status" });
     }
+
+    if (changes === 0) {
+      return res.status(404).json({
+        error: "Monitor not found or you do not have access",
+      });
+    }
+
     res.json({
       paused,
       message: paused ? "Monitoring paused" : "Monitoring resumed",
@@ -447,9 +497,11 @@ app.patch("/api/monitors/:id/pause", (req, res) => {
   });
 });
 
-app.get("/api/monitors/:id/history", (req, res) => {
+app.get("/api/monitors/:id/history", authenticateToken, (req, res) => {
   const { id } = req.params;
-  getMonitorHistory(id, (err, data) => {
+  const userId = req.user.id;
+
+  getMonitorHistory(id, userId, (err, data) => {
     if (err) {
       console.error("Error fetching monitor history:", err.message);
       return res.status(500).json({ error: "Failed to fetch history" });
@@ -458,9 +510,11 @@ app.get("/api/monitors/:id/history", (req, res) => {
   });
 });
 
-app.get("/api/monitors/:id/chart/uptime", (req, res) => {
+app.get("/api/monitors/:id/chart/uptime", authenticateToken, (req, res) => {
   const { id } = req.params;
-  getMonitorUptimeChartData(id, (err, data) => {
+  const userId = req.user.id;
+
+  getMonitorUptimeChartData(id, userId, (err, data) => {
     if (err) {
       console.error("Error fetching monitor uptime chart data:", err.message);
       return res.status(500).json({ error: "Failed to fetch uptime data" });
@@ -469,18 +523,27 @@ app.get("/api/monitors/:id/chart/uptime", (req, res) => {
   });
 });
 
-app.get("/api/monitors/:id/chart/response-time", (req, res) => {
-  const { id } = req.params;
-  getMonitorResponseTimeChartData(id, (err, data) => {
-    if (err) {
-      console.error("Error fetching monitor response time data:", err.message);
-      return res
-        .status(500)
-        .json({ error: "Failed to fetch response time data" });
-    }
-    res.json(data || []);
-  });
-});
+app.get(
+  "/api/monitors/:id/chart/response-time",
+  authenticateToken,
+  (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    getMonitorResponseTimeChartData(id, userId, (err, data) => {
+      if (err) {
+        console.error(
+          "Error fetching monitor response time data:",
+          err.message
+        );
+        return res
+          .status(500)
+          .json({ error: "Failed to fetch response time data" });
+      }
+      res.json(data || []);
+    });
+  }
+);
 
 // Check DNS resolution
 async function checkDns(monitor) {
@@ -629,7 +692,7 @@ async function checkUptime(monitor) {
 // Run checks every minute
 cron.schedule("* * * * *", () => {
   console.log("Running uptime checks...");
-  getAllMonitors((err, monitors) => {
+  getAllMonitorsForAdmin((err, monitors) => {
     if (err) {
       console.error("Error fetching monitors for check:", err.message);
       return;
@@ -648,9 +711,11 @@ cron.schedule("* * * * *", () => {
   });
 });
 
-app.get("/api/monitors/:id/downtime", (req, res) => {
+app.get("/api/monitors/:id/downtime", authenticateToken, (req, res) => {
   const { id } = req.params;
-  getMonitorHistory(id, (err, history) => {
+  const userId = req.user.id;
+
+  getMonitorHistory(id, userId, (err, history) => {
     if (err) {
       console.error("Error fetching monitor history:", err.message);
       return res.status(500).json({ error: "Failed to fetch history" });
@@ -690,6 +755,27 @@ app.get("/api/monitors/:id/downtime", (req, res) => {
       downtimes: recentDowntimes,
       total: downtimes.length,
     });
+  });
+});
+
+app.get("/api/admin/monitors", authenticateToken, (req, res) => {
+  // Check if user is admin
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      status: false,
+      message: "Access denied. Admin privileges required.",
+    });
+  }
+
+  getAllMonitorsForAdmin((err, rows) => {
+    if (err) {
+      console.error("Error fetching all monitors:", err.message);
+      return res.status(500).json({
+        status: false,
+        error: "Failed to fetch monitors",
+      });
+    }
+    res.json(rows);
   });
 });
 
@@ -1304,6 +1390,405 @@ app.delete(
         message: "Internal server error",
       });
     }
+  }
+);
+
+app.get(
+  "/api/monitors/:id/notification-settings",
+  authenticateToken,
+  (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Validasi ID
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        status: false,
+        error: "Invalid monitor ID",
+      });
+    }
+
+    checkMonitorOwnership(id, userId, (err, isOwner) => {
+      if (err) {
+        console.error("Error checking monitor ownership:", err.message);
+        return res.status(500).json({
+          status: false,
+          error: "Failed to fetch notification settings",
+        });
+      }
+
+      if (!isOwner) {
+        return res.status(404).json({
+          status: false,
+          error:
+            "Monitor not found or you don't have permission to view notification settings",
+        });
+      }
+
+      getMonitorNotificationSettings(id, userId, (settingsErr, settings) => {
+        if (settingsErr) {
+          console.error(
+            "Error fetching notification settings:",
+            settingsErr.message
+          );
+          return res.status(500).json({
+            status: false,
+            error: "Failed to fetch notification settings",
+          });
+        }
+
+        res.json({
+          status: true,
+          data: settings || [],
+        });
+      });
+    });
+  }
+);
+
+app.post(
+  "/api/monitors/:id/notification-settings",
+  authenticateToken,
+  (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const {
+      channel,
+      notify_on_down = 1,
+      notify_on_up = 1,
+      is_active = 1,
+    } = req.body;
+
+    // Validasi input
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        status: false,
+        error: "Invalid monitor ID",
+      });
+    }
+
+    if (!channel || typeof channel !== "string" || channel.trim() === "") {
+      return res.status(400).json({
+        status: false,
+        error: "Channel is required and must be a non-empty string",
+      });
+    }
+
+    const notifyDown = notify_on_down ? 1 : 0;
+    const notifyUp = notify_on_up ? 1 : 0;
+    const isActive = is_active ? 1 : 0;
+
+    checkMonitorOwnership(id, userId, (err, isOwner) => {
+      if (err) {
+        console.error("Error checking monitor ownership:", err.message);
+        return res.status(500).json({
+          status: false,
+          error: "Failed to create notification setting",
+        });
+      }
+
+      if (!isOwner) {
+        return res.status(404).json({
+          status: false,
+          error:
+            "Monitor not found or you don't have permission to add notification settings",
+        });
+      }
+
+      createNotificationSetting(
+        id,
+        userId,
+        channel,
+        notifyDown,
+        notifyUp,
+        isActive,
+        (createErr, settingId) => {
+          if (createErr) {
+            console.error(
+              "Error creating notification setting:",
+              createErr.message
+            );
+
+            if (
+              createErr.code === "SQLITE_CONSTRAINT" &&
+              createErr.message.includes("UNIQUE constraint failed")
+            ) {
+              return res.status(400).json({
+                status: false,
+                error: `Notification setting for channel '${channel}' already exists for this monitor`,
+              });
+            }
+
+            return res.status(500).json({
+              status: false,
+              error: "Failed to create notification setting",
+            });
+          }
+
+          getNotificationSetting(settingId, id, userId, (getErr, setting) => {
+            if (getErr || !setting) {
+              console.error(
+                "Error fetching created notification setting:",
+                getErr?.message
+              );
+              return res.status(201).json({
+                status: true,
+                data: {
+                  id: settingId,
+                  monitor_id: parseInt(id),
+                  user_id: userId,
+                  channel,
+                  notify_on_down: notifyDown,
+                  notify_on_up: notifyUp,
+                  is_active: isActive,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                },
+              });
+            }
+
+            res.status(201).json({
+              status: true,
+              data: setting,
+            });
+          });
+        }
+      );
+    });
+  }
+);
+
+app.put(
+  "/api/monitors/:id/notification-settings/:settingId",
+  authenticateToken,
+  (req, res) => {
+    const { id, settingId } = req.params;
+    const userId = req.user.id;
+    const { notify_on_down, notify_on_up, is_active } = req.body;
+
+    // Validasi IDs
+    if (
+      !id ||
+      isNaN(parseInt(id)) ||
+      !settingId ||
+      isNaN(parseInt(settingId))
+    ) {
+      return res.status(400).json({
+        status: false,
+        error: "Invalid monitor ID or setting ID",
+      });
+    }
+
+    checkNotificationSettingOwnership(
+      settingId,
+      id,
+      userId,
+      (checkErr, isOwner) => {
+        if (checkErr) {
+          console.error(
+            "Error checking notification setting ownership:",
+            checkErr.message
+          );
+          return res.status(500).json({
+            status: false,
+            error: "Failed to update notification setting",
+          });
+        }
+
+        if (!isOwner) {
+          return res.status(404).json({
+            status: false,
+            error:
+              "Notification setting not found or you don't have permission to update it",
+          });
+        }
+
+        getNotificationSetting(
+          settingId,
+          id,
+          userId,
+          (getErr, currentSetting) => {
+            if (getErr) {
+              console.error(
+                "Error fetching current notification setting:",
+                getErr.message
+              );
+              return res.status(500).json({
+                status: false,
+                error: "Failed to update notification setting",
+              });
+            }
+
+            if (!currentSetting) {
+              return res.status(404).json({
+                status: false,
+                error: "Notification setting not found",
+              });
+            }
+
+            const notifyDown =
+              notify_on_down !== undefined
+                ? notify_on_down
+                  ? 1
+                  : 0
+                : currentSetting.notify_on_down;
+            const notifyUp =
+              notify_on_up !== undefined
+                ? notify_on_up
+                  ? 1
+                  : 0
+                : currentSetting.notify_on_up;
+            const isActive =
+              is_active !== undefined
+                ? is_active
+                  ? 1
+                  : 0
+                : currentSetting.is_active;
+
+            updateNotificationSetting(
+              settingId,
+              id,
+              userId,
+              notifyDown,
+              notifyUp,
+              isActive,
+              (updateErr, changes) => {
+                if (updateErr) {
+                  console.error(
+                    "Error updating notification setting:",
+                    updateErr.message
+                  );
+                  return res.status(500).json({
+                    status: false,
+                    error: "Failed to update notification setting",
+                  });
+                }
+
+                if (changes === 0) {
+                  return res.status(404).json({
+                    status: false,
+                    error: "Notification setting not found or no changes made",
+                  });
+                }
+
+                getNotificationSetting(
+                  settingId,
+                  id,
+                  userId,
+                  (getUpdatedErr, updatedSetting) => {
+                    if (getUpdatedErr || !updatedSetting) {
+                      console.error(
+                        "Error fetching updated notification setting:",
+                        getUpdatedErr?.message
+                      );
+                      return res.json({
+                        status: true,
+                        data: {
+                          id: parseInt(settingId),
+                          monitor_id: parseInt(id),
+                          channel: currentSetting.channel,
+                          notify_on_down: notifyDown,
+                          notify_on_up: notifyUp,
+                          is_active: isActive,
+                          updated_at: new Date().toISOString(),
+                        },
+                      });
+                    }
+
+                    res.json({
+                      status: true,
+                      data: updatedSetting,
+                    });
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  }
+);
+
+app.delete(
+  "/api/monitors/:id/notification-settings/:settingId",
+  authenticateToken,
+  (req, res) => {
+    const { id, settingId } = req.params;
+    const userId = req.user.id;
+
+    // Validasi IDs
+    if (
+      !id ||
+      isNaN(parseInt(id)) ||
+      !settingId ||
+      isNaN(parseInt(settingId))
+    ) {
+      return res.status(400).json({
+        status: false,
+        error: "Invalid monitor ID or setting ID",
+      });
+    }
+
+    checkNotificationSettingOwnership(
+      settingId,
+      id,
+      userId,
+      (checkErr, isOwner) => {
+        if (checkErr) {
+          console.error(
+            "Error checking notification setting ownership:",
+            checkErr.message
+          );
+          return res.status(500).json({
+            status: false,
+            error: "Failed to delete notification setting",
+          });
+        }
+
+        if (!isOwner) {
+          return res.status(404).json({
+            status: false,
+            error:
+              "Notification setting not found or you don't have permission to delete it",
+          });
+        }
+
+        deleteNotificationSetting(
+          settingId,
+          id,
+          userId,
+          (deleteErr, changes) => {
+            if (deleteErr) {
+              console.error(
+                "Error deleting notification setting:",
+                deleteErr.message
+              );
+              return res.status(500).json({
+                status: false,
+                error: "Failed to delete notification setting",
+              });
+            }
+
+            if (changes === 0) {
+              return res.status(404).json({
+                status: false,
+                error: "Notification setting not found or already deleted",
+              });
+            }
+
+            res.json({
+              status: true,
+              message: "Notification setting deleted successfully",
+              data: {
+                id: parseInt(settingId),
+                monitor_id: parseInt(id),
+              },
+            });
+          }
+        );
+      }
+    );
   }
 );
 
