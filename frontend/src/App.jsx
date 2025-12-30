@@ -7,6 +7,8 @@ import { TooltipProvider } from './components/ui/tooltip';
 import './App.css';
 import LoginPage from './page/LoginPage';
 import RegisterPage from './page/RegisterPage';
+import ProfilePage from './page/ProfilePage';
+import NotificationPage from './page/NotificationPage';
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ function App() {
               <Route path="/Register" element={<RegisterPage />} />
               <Route path="/dashboard" element={<DashboardPage theme={theme} setTheme={setTheme} />} />
               <Route path="/Dashboard1" element={<DashboardPage theme={theme} setTheme={setTheme} />} />
+              <Route path="/Profile" element={<ProfilePage />} />
+              <Route path="/Notification" element={<NotificationPage />} />
             </Routes>
           </Router>
         </div>
