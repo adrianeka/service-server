@@ -8,6 +8,11 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://uptime-kit.vercel.app",
   "https://uptime-kit.jiwamu.de",
+  ...(process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",")
+        .map((o) => o.trim())
+        .filter(Boolean)
+    : []),
 ];
 
 app.use(
