@@ -523,6 +523,7 @@ function updateMonitor(
   name,
   url,
   type,
+  heartbeatSec,
   notificationSettingId,
   userId,
   callback
@@ -530,13 +531,18 @@ function updateMonitor(
   const stmt = db.prepare(
     `
     UPDATE monitors
-    SET name = ?, url = ?, type = ?, notification_setting_id = ?
+    SET 
+      name = ?, 
+      url = ?, 
+      type = ?, 
+      heartbeat_sec = ?, 
+      notification_setting_id = ?
     WHERE id = ? AND user_id = ?
     `
   );
 
   stmt.run(
-    [name, url, type, notificationSettingId, id, userId],
+    [name, url, type, heartbeatSec, notificationSettingId, id, userId],
     function (err) {
       if (err) return callback(err);
 

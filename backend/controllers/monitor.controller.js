@@ -141,30 +141,52 @@ exports.create = async (req, res) => {
 
 exports.update = (req, res) => {
   const { id } = req.params;
-  const { name, url, type = "http", notification_setting_id } = req.body;
+  const {
+    name,
+    url,
+    type = "http",
+    notification_setting_id,
+    heartbeat_sec = 60,
+  } = req.body;
+
   const userId = req.user.id;
 
   if (!name || !url) {
     return res.status(400).json({ error: "Name and URL are required" });
   }
 
-  updateMonitor(id, name, url, type, notification_setting_id, userId, (err) => {
-    if (err) {
-      if (err.message === "FORBIDDEN") {
-        return res.status(403).json({ error: "Access denied" });
+  if (heartbeat_sec < 10 || heartbeat_sec > 3600 || isNaN(heartbeat_sec)) {
+    return res.status(400).json({
+      error: "heartbeat_sec must be between 10 and 3600 seconds",
+    });
+  }
+
+  updateMonitor(
+    id,
+    name,
+    url,
+    type,
+    heartbeat_sec,
+    notification_setting_id,
+    userId,
+    (err) => {
+      if (err) {
+        if (err.message === "FORBIDDEN") {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        if (err.message.includes("UNIQUE constraint failed")) {
+          return res.status(400).json({
+            error: "You already have a monitor with this URL and type",
+          });
+        }
+
+        return res.status(500).json({ error: "Failed to update monitor" });
       }
 
-      if (err.message.includes("UNIQUE constraint failed")) {
-        return res.status(400).json({
-          error: "You already have a monitor with this URL and type",
-        });
-      }
-
-      return res.status(500).json({ error: "Failed to update monitor" });
+      res.json({ message: "Monitor updated successfully" });
     }
-
-    res.json({ message: "Monitor updated successfully" });
-  });
+  );
 };
 
 exports.delete = (req, res) => {
