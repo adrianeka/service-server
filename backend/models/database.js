@@ -1,5 +1,5 @@
 const sqlite3 = require("sqlite3").verbose();
-const dbPath = "uptimekit.db";
+const dbPath = "testdb2.db";
 const { sendEmail } = require("../services/email.service");
 const { humanizeError } = require("../utils/monitorError");
 

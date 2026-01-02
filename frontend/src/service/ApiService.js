@@ -12,14 +12,14 @@ export const createMonitor = async (data) => {
 };
 
 export const getMonitors = async () => {
-  try{
+  try {
     const response = await api.get("/api/monitors");
     return response.data;
-  }catch (error){
+  } catch (error) {
     console.error("Get monitors failed:", error);
     throw error;
   }
-}
+};
 
 export const deleteMonitor = async (id) => {
   try {
@@ -64,35 +64,54 @@ export const getMonitorUptime = async (monitorId) => {
 export const getMonitorUptimeChart = async (monitorId) => {
   try {
     const response = await api.get(`/api/monitors/${monitorId}/chart/uptime`);
-    return response.data.map(item => ({
+    return response.data.map((item) => ({
       ...item,
-      time: parseUTC(item.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      time: parseUTC(item.time).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     }));
   } catch (error) {
-    console.error(`Error fetching uptime chart for monitor ${monitorId}:`, error);
+    console.error(
+      `Error fetching uptime chart for monitor ${monitorId}:`,
+      error
+    );
     throw error;
   }
 };
 
 export const getMonitorResponseTimeChart = async (monitorId) => {
   try {
-    const response = await api.get(`/api/monitors/${monitorId}/chart/response-time`);
-    return response.data.map(item => ({
+    const response = await api.get(
+      `/api/monitors/${monitorId}/chart/response-time`
+    );
+    return response.data.map((item) => ({
       ...item,
-      time: parseUTC(item.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      time: parseUTC(item.time).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     }));
   } catch (error) {
-    console.error(`Error fetching response time chart for monitor ${monitorId}:`, error);
+    console.error(
+      `Error fetching response time chart for monitor ${monitorId}:`,
+      error
+    );
     throw error;
   }
 };
 
 export const pauseMonitor = async (monitorId, paused) => {
   try {
-    const response = await api.patch(`/api/monitors/${monitorId}/pause`, { paused });
+    const response = await api.patch(`/api/monitors/${monitorId}/pause`, {
+      paused,
+    });
     return response.data;
   } catch (error) {
-    console.error(`Failed to ${paused ? 'pause' : 'resume'} monitor ${monitorId}:`, error);
+    console.error(
+      `Failed to ${paused ? "pause" : "resume"} monitor ${monitorId}:`,
+      error
+    );
     throw error;
   }
 };
@@ -101,7 +120,9 @@ export const getMonitorHistory = async (monitorId) => {
   try {
     const response = await api.get(`/api/monitors/${monitorId}/history`);
     // Pastikan selalu mengembalikan array
-    return Array.isArray(response.data) ? response.data : response.data.history || [];
+    return Array.isArray(response.data)
+      ? response.data
+      : response.data.history || [];
   } catch (error) {
     console.error(`Error fetching history for monitor ${monitorId}:`, error);
     return []; // fallback ke array kosong

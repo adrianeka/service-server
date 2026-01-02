@@ -1,9 +1,26 @@
-import { useState } from 'react';
+import { useState } from "react";
 import Navbar from "../components/Navbar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../components/ui/tooltip";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../components/ui/tooltip";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 import { Progress } from "../components/ui/progress";
-import { Activity, RefreshCw, TrendingUp, TrendingDown, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import {
+  Activity,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+} from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent } from "../components/ui/card";
 import MonitorCard from "../components/MonitorCard";
@@ -11,15 +28,50 @@ import AddMonitorDialog from "../components/AddMonitorDialog";
 
 // Dummy monitors data
 const dummyMonitors = [
-  { id: 1, name: "API Server", url: "https://api.example.com", status: "up", response_time: 45, type: "http" },
-  { id: 2, name: "Database", url: "db.example.com", status: "up", response_time: 120, type: "dns" },
-  { id: 3, name: "Web Server", url: "https://example.com", status: "up", response_time: 200, type: "http" },
-  { id: 4, name: "Mail Server", url: "mail.example.com", status: "down", response_time: 0, type: "dns" },
-  { id: 5, name: "Backup Server", url: "8.8.8.8", status: "slow", response_time: 450, type: "icmp" },
+  {
+    id: 1,
+    name: "API Server",
+    url: "https://api.example.com",
+    status: "up",
+    response_time: 45,
+    type: "http",
+  },
+  {
+    id: 2,
+    name: "Database",
+    url: "db.example.com",
+    status: "up",
+    response_time: 120,
+    type: "dns",
+  },
+  {
+    id: 3,
+    name: "Web Server",
+    url: "https://example.com",
+    status: "up",
+    response_time: 200,
+    type: "http",
+  },
+  {
+    id: 4,
+    name: "Mail Server",
+    url: "mail.example.com",
+    status: "down",
+    response_time: 0,
+    type: "dns",
+  },
+  {
+    id: 5,
+    name: "Backup Server",
+    url: "8.8.8.8",
+    status: "slow",
+    response_time: 450,
+    type: "icmp",
+  },
 ];
 
 function DashboardPage({ theme, setTheme }) {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const monitors = dummyMonitors;
 
@@ -29,18 +81,21 @@ function DashboardPage({ theme, setTheme }) {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this monitor?')) {
-      alert('Monitor deleted (dummy action)');
+    if (window.confirm("Are you sure you want to delete this monitor?")) {
+      alert("Monitor deleted (dummy action)");
     }
   };
 
   // Stats calculation
   const stats = {
     total: monitors.length,
-    up: monitors.filter(m => m.status === 'up').length,
-    down: monitors.filter(m => m.status === 'down').length,
-    slow: monitors.filter(m => m.status === 'slow').length,
-    avgResponseTime: Math.round(monitors.reduce((acc, m) => acc + (m.response_time || 0), 0) / monitors.length),
+    up: monitors.filter((m) => m.status === "up").length,
+    down: monitors.filter((m) => m.status === "down").length,
+    slow: monitors.filter((m) => m.status === "slow").length,
+    avgResponseTime: Math.round(
+      monitors.reduce((acc, m) => acc + (m.response_time || 0), 0) /
+        monitors.length
+    ),
   };
 
   stats.issues = stats.down + stats.slow;
@@ -60,27 +115,31 @@ function DashboardPage({ theme, setTheme }) {
     return Math.round(sorted[lower] * (1 - weight) + sorted[upper] * weight);
   };
 
-  const responseTimes = monitors.map(m => typeof m.response_time === 'number' ? m.response_time : 0).filter(x => x > 0);
+  const responseTimes = monitors
+    .map((m) => (typeof m.response_time === "number" ? m.response_time : 0))
+    .filter((x) => x > 0);
   stats.p95Response = computePercentile(responseTimes, 95) || 0;
 
   const maxLatency = 2000;
-  const latencyNormalized = Math.max(0, Math.min(1, 1 - (stats.p95Response / maxLatency)));
-  const weights = { uptime: 0.5, issues: 0.3, latency: 0.2 };
-  const healthRaw = (
-    (uptimePercent / 100) * weights.uptime
-    + (1 - (issuesPercent / 100)) * weights.issues
-    + latencyNormalized * weights.latency
+  const latencyNormalized = Math.max(
+    0,
+    Math.min(1, 1 - stats.p95Response / maxLatency)
   );
+  const weights = { uptime: 0.5, issues: 0.3, latency: 0.2 };
+  const healthRaw =
+    (uptimePercent / 100) * weights.uptime +
+    (1 - issuesPercent / 100) * weights.issues +
+    latencyNormalized * weights.latency;
   stats.healthScore = Math.round(healthRaw * 100);
 
   const getFilteredMonitors = () => {
-    switch(activeTab) {
-      case 'up':
-        return monitors.filter(m => m.status === 'up');
-      case 'down':
-        return monitors.filter(m => m.status === 'down');
-      case 'slow':
-        return monitors.filter(m => m.status === 'slow');
+    switch (activeTab) {
+      case "up":
+        return monitors.filter((m) => m.status === "up");
+      case "down":
+        return monitors.filter((m) => m.status === "down");
+      case "slow":
+        return monitors.filter((m) => m.status === "slow");
       default:
         return monitors;
     }
@@ -90,80 +149,122 @@ function DashboardPage({ theme, setTheme }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar theme={theme} setTheme={setTheme} onRefresh={handleRefresh} isRefreshing={isRefreshing} />
-    
-    <div className='pt-5 px-12 pb-5'>
-        <h1 className='text-3xl font-bold'>Hello, Username !</h1>
-    </div>
+      <Navbar
+        theme={theme}
+        setTheme={setTheme}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+      />
+
+      <div className="px-12 pt-5 pb-5">
+        <h1 className="text-3xl font-bold">Hello, Username !</h1>
+      </div>
       {/* Stats Section */}
       {monitors.length > 0 && (
-        <div className="border bg-muted/30 bg-gray-200">
-          <div className="container mx-auto px-4 py-6">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <Card className="hover:shadow-lg transition-shadow">
+        <div className="bg-gray-200 border bg-muted/30">
+          <div className="container px-4 py-6 mx-auto">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+              <Card className="transition-shadow hover:shadow-lg">
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Total Monitors</p>
+                    <p className="mb-1 text-xs text-muted-foreground">
+                      Total Monitors
+                    </p>
                     <p className="text-3xl font-bold">{stats.total}</p>
                   </div>
                 </CardContent>
               </Card>
-              
-              <Card className="hover:shadow-lg transition-shadow">
+
+              <Card className="transition-shadow hover:shadow-lg">
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Operational</p>
-                    <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{stats.up}</p>
-                    <Progress value={(stats.up / stats.total) * 100} className="mt-2 h-1.5" />
+                    <p className="mb-1 text-xs text-muted-foreground">
+                      Operational
+                    </p>
+                    <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {stats.up}
+                    </p>
+                    <Progress
+                      value={(stats.up / stats.total) * 100}
+                      className="mt-2 h-1.5"
+                    />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow">
+              <Card className="transition-shadow hover:shadow-lg">
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Down</p>
-                    <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.down}</p>
-                    <Progress value={(stats.down / stats.total) * 100} className="mt-2 h-1.5 bg-red-100 dark:bg-red-950 [&>div]:bg-red-600" />
+                    <p className="mb-1 text-xs text-muted-foreground">Down</p>
+                    <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+                      {stats.down}
+                    </p>
+                    <Progress
+                      value={(stats.down / stats.total) * 100}
+                      className="mt-2 h-1.5 bg-red-100 dark:bg-red-950 [&>div]:bg-red-600"
+                    />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow">
+              <Card className="transition-shadow hover:shadow-lg">
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Uptime</p>
+                    <p className="mb-1 text-xs text-muted-foreground">Uptime</p>
                     <div className="flex items-center justify-center gap-1">
                       <p className="text-3xl font-bold">{uptime}%</p>
                       {uptime >= 99 ? (
-                        <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                        <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                       ) : (
-                        <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
                       )}
                     </div>
-                    <Progress value={parseFloat(uptime)} className="mt-2 h-1.5" />
+                    <Progress
+                      value={parseFloat(uptime)}
+                      className="mt-2 h-1.5"
+                    />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow">
+              <Card className="transition-shadow hover:shadow-lg">
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Health Score</p>
+                    <p className="mb-1 text-xs text-muted-foreground">
+                      Health Score
+                    </p>
                     <div className="flex items-center justify-center gap-1">
-                      <p className={`text-3xl font-bold ${stats.healthScore >= 90 ? 'text-emerald-600 dark:text-emerald-400' : stats.healthScore >= 75 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>{stats.healthScore}</p>
-                      <p className="text-sm ml-1 align-baseline">/100</p>
+                      <p
+                        className={`text-3xl font-bold ${
+                          stats.healthScore >= 90
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : stats.healthScore >= 75
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {stats.healthScore}
+                      </p>
+                      <p className="ml-1 text-sm align-baseline">/100</p>
                     </div>
                     <div className="mt-2">
-                      <Progress value={stats.healthScore || 0} className="h-1.5" />
+                      <Progress
+                        value={stats.healthScore || 0}
+                        className="h-1.5"
+                      />
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="cursor-help">{`${uptimePercent.toFixed(1)}% uptime · ${stats.p95Response}ms P95 · ${stats.issues} issues`}</span>
+                          <span className="cursor-help">{`${uptimePercent.toFixed(
+                            1
+                          )}% uptime · ${stats.p95Response}ms P95 · ${
+                            stats.issues
+                          } issues`}</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          Health Score = 50% uptime + 30% issue count + 20% latency (P95)
+                          Health Score = 50% uptime + 30% issue count + 20%
+                          latency (P95)
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -176,17 +277,18 @@ function DashboardPage({ theme, setTheme }) {
       )}
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container px-4 py-8 mx-auto">
         {monitors.length === 0 ? (
-          <div className="text-center py-16">
+          <div className="py-16 text-center">
             <Card className="max-w-md mx-auto">
               <CardContent className="pt-12 pb-12">
-                <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-full flex items-center justify-center">
+                <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-600/20">
                   <Activity className="w-12 h-12 text-primary" />
                 </div>
-                <h2 className="text-2xl font-semibold mb-3">No Monitors Yet</h2>
-                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                  Start monitoring your websites and services by adding your first monitor.
+                <h2 className="mb-3 text-2xl font-semibold">No Monitors Yet</h2>
+                <p className="max-w-sm mx-auto mb-6 text-muted-foreground">
+                  Start monitoring your websites and services by adding your
+                  first monitor.
                 </p>
                 <div className="flex justify-center">
                   <AddMonitorDialog />
@@ -195,28 +297,49 @@ function DashboardPage({ theme, setTheme }) {
             </Card>
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <div className="flex items-center justify-between mb-6">
               <TabsList className="grid w-full max-w-md grid-cols-4 bg-gray-200">
                 <TabsTrigger value="all" className="flex items-center gap-2">
-                  <Activity className="h-4 w-4" />
+                  <Activity className="w-4 h-4" />
                   All
-                  <Badge variant="secondary" className="ml-1">{stats.total}</Badge>
+                  <Badge variant="secondary" className="ml-1">
+                    {stats.total}
+                  </Badge>
                 </TabsTrigger>
                 <TabsTrigger value="up" className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
+                  <CheckCircle2 className="w-4 h-4" />
                   Up
-                  <Badge variant="secondary" className="ml-1 bg-emerald-100 dark:bg-emerald-950">{stats.up}</Badge>
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 bg-emerald-100 dark:bg-emerald-950"
+                  >
+                    {stats.up}
+                  </Badge>
                 </TabsTrigger>
                 <TabsTrigger value="slow" className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTriangle className="w-4 h-4" />
                   Slow
-                  <Badge variant="secondary" className="ml-1 bg-amber-100 dark:bg-amber-950">{stats.slow}</Badge>
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 bg-amber-100 dark:bg-amber-950"
+                  >
+                    {stats.slow}
+                  </Badge>
                 </TabsTrigger>
                 <TabsTrigger value="down" className="flex items-center gap-2">
-                  <XCircle className="h-4 w-4" />
+                  <XCircle className="w-4 h-4" />
                   Down
-                  <Badge variant="secondary" className="ml-1 bg-red-100 dark:bg-red-950">{stats.down}</Badge>
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 bg-red-100 dark:bg-red-950"
+                  >
+                    {stats.down}
+                  </Badge>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -225,15 +348,17 @@ function DashboardPage({ theme, setTheme }) {
               {filteredMonitors.length === 0 ? (
                 <Card>
                   <CardContent className="pt-12 pb-12 text-center">
-                    <p className="text-muted-foreground">No monitors in this category</p>
+                    <p className="text-muted-foreground">
+                      No monitors in this category
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-3">
                   {filteredMonitors.map((monitor) => (
-                    <MonitorCard 
-                      key={monitor.id} 
-                      monitor={monitor} 
+                    <MonitorCard
+                      key={monitor.id}
+                      monitor={monitor}
                       onDelete={handleDelete}
                     />
                   ))}
