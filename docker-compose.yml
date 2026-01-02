@@ -17,7 +17,6 @@ services:
     ports:
       - "5173:80"
     environment:
-      - VITE_BACKEND_URL=http://localhost:3000
       - TZ=UTC
 
 networks:

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import {
   Dialog,
@@ -15,7 +14,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Plus, Globe, Type, Zap, X, Network, Server, Wifi } from 'lucide-react';
-import api from '../lib/api';
+import { createMonitor } from '../service/ApiService';
 
 const AddMonitorDialog = () => {
   const [open, setOpen] = useState(false);
@@ -29,7 +28,7 @@ const AddMonitorDialog = () => {
   });
 
   const addMonitorMutation = useMutation({
-    mutationFn: (data) => api.post('/api/monitors', { ...data, type: monitorType }),
+    mutationFn: (data) => createMonitor({ ...data, type: monitorType }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
       setOpen(false);
@@ -50,27 +49,27 @@ const AddMonitorDialog = () => {
       <DialogTrigger asChild>
         <div className="md:w-auto w-auto">
           <Button 
-            className="md:size-auto md:gap-2 md:px-6 md:py-2 md:h-10 h-10 w-10 md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all flex md:flex items-center justify-center"
+            className="md:size-auto md:gap-2 md:px-6 md:py-2 md:h- h-10 w-10 md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center rounded-full"
           >
             <Plus className="h-5 w-5" />
             <span className="font-semibold hidden md:inline ml-2">Add Monitor</span>
           </Button>
         </div>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] gap-0 p-0 overflow-hidden">
-        <div className="bg-primary px-6 py-4">
+      <DialogContent className="sm:max-w-[480px] gap-0 p-0 overflow-hidden rounded-lg shadow-lg border border-gray-200 bg-card">
+        <div className="bg-[#1976d2] px-6 py-4 rounded-t-lg">
           <DialogHeader className="border-0">
-            <DialogTitle className="text-2xl text-primary-foreground flex items-center gap-2">
-              <Zap className="h-6 w-6" />
+            <DialogTitle className="text-lg text-white flex items-center gap-2">
+              <Zap className="h-5 w-5 text-white" />
               Add Monitor
             </DialogTitle>
-            <DialogDescription className="text-primary-foreground/80 mt-1">
+            <DialogDescription className="text-white/90 text-sm">
               Start monitoring your website's uptime and performance instantly
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-6 py-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-6 py-6 bg-card">
           <div className="space-y-3">
             <Label className="flex items-center gap-2 font-semibold">
               <Server className="h-4 w-4 text-primary" />
@@ -80,7 +79,7 @@ const AddMonitorDialog = () => {
               <button
                 type="button"
                 onClick={() => setMonitorType('http')}
-                className={`flex-1 p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 p-2 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
                   monitorType === 'http'
                     ? 'border-primary bg-primary/10'
                     : 'border-muted hover:border-primary'
@@ -92,7 +91,7 @@ const AddMonitorDialog = () => {
               <button
                 type="button"
                 onClick={() => setMonitorType('dns')}
-                className={`flex-1 p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 p-2 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
                   monitorType === 'dns'
                     ? 'border-primary bg-primary/10'
                     : 'border-muted hover:border-primary'
@@ -104,7 +103,7 @@ const AddMonitorDialog = () => {
               <button
                 type="button"
                 onClick={() => setMonitorType('icmp')}
-                className={`flex-1 p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 p-2 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
                   monitorType === 'icmp'
                     ? 'border-primary bg-primary/10'
                     : 'border-muted hover:border-primary'
@@ -116,15 +115,14 @@ const AddMonitorDialog = () => {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-1">
             <Label htmlFor="name" className="flex items-center gap-2 font-semibold">
-              <Type className="h-4 w-4 text-primary" />
               Name
             </Label>
             <Input
               id="name"
               placeholder={monitorType === 'dns' ? 'My DNS Server' : monitorType === 'icmp' ? 'My Ping Monitor' : 'My API Server'}
-              className="h-11 border-2 border-muted hover:border-primary transition-colors"
+              className="h-11 border-2 border-muted hover:border-primary transition-colors bg-card"
               {...register('name', { 
                 required: 'Please give your monitor a name',
                 minLength: {
@@ -140,16 +138,15 @@ const AddMonitorDialog = () => {
             )}
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-1">
             <Label htmlFor="url" className="flex items-center gap-2 font-semibold">
-              {monitorType === 'dns' ? <Network className="h-4 w-4 text-primary" /> : monitorType === 'icmp' ? <Wifi className="h-4 w-4 text-primary" /> : <Globe className="h-4 w-4 text-primary" />}
-              {monitorType === 'dns' ? 'Domain to Monitor' : monitorType === 'icmp' ? 'Host to Ping' : 'URL to Monitor'}
+            {monitorType === 'dns' ? 'Domain to Monitor' : monitorType === 'icmp' ? 'Host to Ping' : 'URL to Monitor'}
             </Label>
             <Input
               id="url"
               type={monitorType === 'http' ? 'url' : 'text'}
               placeholder={monitorType === 'dns' ? 'example.com or https://example.com' : monitorType === 'icmp' ? '8.8.8.8 or example.com' : 'https://example.com'}
-              className="h-11 border-2 border-muted hover:border-primary transition-colors font-mono text-sm"
+              className="h-11 border-2 border-muted hover:border-primary transition-colors font-mono text-sm bg-card"
               {...register('url', { 
                 required: monitorType === 'dns' ? 'Enter the domain name you want to monitor' : monitorType === 'icmp' ? 'Enter the host or IP address to ping' : 'Enter the URL you want to monitor',
                 pattern: monitorType === 'http' 
@@ -165,17 +162,56 @@ const AddMonitorDialog = () => {
                 ⚠ {errors.url.message}
               </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              {monitorType === 'dns' 
-                ? '🔍 DNS resolution checked every minute • Resolution time tracked • Auto status updates'
-                : monitorType === 'icmp'
-                ? '📡 ICMP ping checked every minute • Response time tracked • Auto status updates'
-                : '🔍 Checked every minute • Response time tracked • Auto status updates'
-              }
-            </p>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="name" className="flex items-center gap-2 font-semibold">
+              Heartbeat Interval (Check every 60 second)
+            </Label>
+            <Input
+              id="name"
+              placeholder={monitorType === 'dns' ? 'My DNS Server' : monitorType === 'icmp' ? 'My Ping Monitor' : 'My API Server'}
+              className="h-11 border-2 border-muted hover:border-primary transition-colors bg-card"
+              {...register('name', { 
+                required: 'Please give your monitor a name',
+                minLength: {
+                  value: 2,
+                  message: 'Name should be at least 2 characters'
+                }
+              })}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive font-medium">
+                ⚠ {errors.name.message}
+              </p>
+            )}
           </div>
 
-          <DialogFooter className="gap-3 pt-4">
+          <div className="space-y-1">
+            <Label htmlFor="name" className="flex items-center gap-2 font-semibold">
+              Notification
+            </Label>
+            <select
+              id="name"
+              className="h-11 w-full border-2 border-muted hover:border-primary transition-colors px-3 bg-white"
+              {...register('name', { 
+                required: 'Please select a notification',
+              })}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                {monitorType === 'dns' ? 'Select DNS Server' : monitorType === 'icmp' ? 'Select Ping Monitor' : 'Select API Server'}
+              </option>
+              <option value="email">Email</option>
+              <option value="sms">SMS</option>
+              <option value="webhook">Webhook</option>
+            </select>
+            {errors.name && (
+              <p className="text-sm text-destructive font-medium">
+                ⚠ {errors.name.message}
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-3 pt-4 bg-white border-t border-gray-100">
             <Button 
               type="button" 
               variant="outline" 
@@ -184,15 +220,15 @@ const AddMonitorDialog = () => {
                 reset();
                 setMonitorType('http');
               }}
-              className="px-6 h-10 border-2 border-muted-foreground/30 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-muted-foreground/50 transition-all rounded-lg"
+              className="px-4 h-9 border-2 border-[#1976d2] text-[#1976d2] hover:bg-[#eaf4ff] transition-all rounded-md"
             >
-              <X className="h-4 w-4 mr-2" />
+              <X className="h-4 w-4 mr-2 text-[#1976d2]" />
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={addMonitorMutation.isPending}
-              className="px-8 h-10 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all font-semibold text-primary-foreground rounded-lg"
+              className="px-6 h-9 bg-[#1976d2] hover:bg-[#1565c0] shadow-md transition-all font-semibold text-white rounded-md"
             >
               {addMonitorMutation.isPending ? (
                 <>

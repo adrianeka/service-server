@@ -3,15 +3,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from './ui/button';
 import { Trash2, AlertTriangle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import api from '../lib/api';
+import { deleteMonitor } from '../service/ApiService';
 
 const DeleteMonitorDialog = ({ open, onOpenChange, monitor }) => {
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    mutationFn: () => api.delete(`/api/monitors/${monitor?.id}`),
+    mutationFn: () => deleteMonitor(monitor?.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
       onOpenChange(false);
