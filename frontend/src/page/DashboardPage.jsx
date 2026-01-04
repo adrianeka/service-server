@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from "react";
 import Navbar from "../components/Navbar";
 import {
@@ -21,10 +22,21 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
+=======
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Navbar from "../components/Navbar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../components/ui/tooltip";
+import { Activity, RefreshCw, TrendingUp,TriangleAlert, TrendingDown, CheckCircle2, XCircle, AlertTriangle, Loader2, Plus, Globe, Settings, Heart, Clock } from "lucide-react";
+>>>>>>> 9bcab8c (Finish,Tester)
 import { Badge } from "../components/ui/badge";
-import { Card, CardContent } from "../components/ui/card";
 import MonitorCard from "../components/MonitorCard";
 import AddMonitorDialog from "../components/AddMonitorDialog";
+<<<<<<< HEAD
+=======
+import { getMonitors, pauseMonitor, deleteMonitor } from "@/service/ApiService";
+import Footer from "../components/Footer";
+>>>>>>> 9bcab8c (Finish,Tester)
 
 // Dummy monitors data
 const dummyMonitors = [
@@ -73,302 +85,164 @@ const dummyMonitors = [
 function DashboardPage({ theme, setTheme }) {
   const [activeTab, setActiveTab] = useState("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const monitors = dummyMonitors;
+  const queryClient = useQueryClient();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) setUser(JSON.parse(userData));
+  }, []);
+
+  const { data: monitors = [], isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["monitors"],
+    queryFn: getMonitors,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const pauseMutation = useMutation({
+    mutationFn: ({ id, paused }) => pauseMonitor(id, paused),
+    onSuccess: () => queryClient.invalidateQueries(["monitors"]),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteMonitor,
+    onSuccess: () => queryClient.invalidateQueries(["monitors"]),
+  });
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this monitor?")) {
-      alert("Monitor deleted (dummy action)");
-    }
+  const getMonitorStatus = (monitor) => {
+    if (monitor.status === "down") return "down";
+    if (monitor.status === "up" && monitor.response_time > 1000) return "slow";
+    return monitor.status;
   };
 
-  // Stats calculation
+  const processedMonitors = monitors.map((monitor) => ({
+    ...monitor,
+    displayStatus: getMonitorStatus(monitor),
+  }));
+
   const stats = {
-    total: monitors.length,
-    up: monitors.filter((m) => m.status === "up").length,
-    down: monitors.filter((m) => m.status === "down").length,
-    slow: monitors.filter((m) => m.status === "slow").length,
-    avgResponseTime: Math.round(
-      monitors.reduce((acc, m) => acc + (m.response_time || 0), 0) /
-        monitors.length
-    ),
+    total: processedMonitors.length,
+    up: processedMonitors.filter((m) => m.displayStatus === "up").length,
+    down: processedMonitors.filter((m) => m.displayStatus === "down").length,
+    slow: processedMonitors.filter((m) => m.displayStatus === "slow").length,
+    avgResponseTime: processedMonitors.length > 0 ? Math.round(processedMonitors.reduce((acc, m) => acc + (m.response_time || 0), 0) / processedMonitors.length) : 0,
   };
 
-  stats.issues = stats.down + stats.slow;
-
-  const uptime = ((stats.up / stats.total) * 100).toFixed(1);
-  const uptimePercent = (stats.up / stats.total) * 100;
-  const issuesPercent = (stats.issues / stats.total) * 100;
-
-  const computePercentile = (arr, p) => {
-    if (!arr || arr.length === 0) return 0;
+  const responseTimes = processedMonitors.map((m) => m.response_time).filter((x) => x > 0);
+  const uptimePercent = stats.total > 0 ? (stats.up / stats.total) * 100 : 0;
+  
+  // Health Score Logic
+  const p95 = (arr) => {
+    if (arr.length === 0) return 0;
     const sorted = [...arr].sort((a, b) => a - b);
-    const idx = (p / 100) * (sorted.length - 1);
-    const lower = Math.floor(idx);
-    const upper = Math.ceil(idx);
-    if (lower === upper) return sorted[lower];
-    const weight = idx - lower;
-    return Math.round(sorted[lower] * (1 - weight) + sorted[upper] * weight);
+    return sorted[Math.floor(0.95 * (sorted.length - 1))];
   };
+  const p95Val = p95(responseTimes);
+  const healthScore = stats.total > 0 ? Math.round((uptimePercent * 0.5) + ((1 - (stats.down / stats.total)) * 30) + (Math.max(0, (1 - p95Val/2000)) * 20)) : 0;
 
-  const responseTimes = monitors
-    .map((m) => (typeof m.response_time === "number" ? m.response_time : 0))
-    .filter((x) => x > 0);
-  stats.p95Response = computePercentile(responseTimes, 95) || 0;
+  const filteredMonitors = processedMonitors.filter(m => activeTab === "all" ? true : m.displayStatus === activeTab);
 
-  const maxLatency = 2000;
-  const latencyNormalized = Math.max(
-    0,
-    Math.min(1, 1 - stats.p95Response / maxLatency)
-  );
-  const weights = { uptime: 0.5, issues: 0.3, latency: 0.2 };
-  const healthRaw =
-    (uptimePercent / 100) * weights.uptime +
-    (1 - issuesPercent / 100) * weights.issues +
-    latencyNormalized * weights.latency;
-  stats.healthScore = Math.round(healthRaw * 100);
-
-  const getFilteredMonitors = () => {
-    switch (activeTab) {
-      case "up":
-        return monitors.filter((m) => m.status === "up");
-      case "down":
-        return monitors.filter((m) => m.status === "down");
-      case "slow":
-        return monitors.filter((m) => m.status === "slow");
-      default:
-        return monitors;
-    }
-  };
-
-  const filteredMonitors = getFilteredMonitors();
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar
-        theme={theme}
-        setTheme={setTheme}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-      />
-
-      <div className="px-12 pt-5 pb-5">
-        <h1 className="text-3xl font-bold">Hello, Username !</h1>
-      </div>
-      {/* Stats Section */}
-      {monitors.length > 0 && (
-        <div className="bg-gray-200 border bg-muted/30">
-          <div className="container px-4 py-6 mx-auto">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-              <Card className="transition-shadow hover:shadow-lg">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="mb-1 text-xs text-muted-foreground">
-                      Total Monitors
-                    </p>
-                    <p className="text-3xl font-bold">{stats.total}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="transition-shadow hover:shadow-lg">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="mb-1 text-xs text-muted-foreground">
-                      Operational
-                    </p>
-                    <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                      {stats.up}
-                    </p>
-                    <Progress
-                      value={(stats.up / stats.total) * 100}
-                      className="mt-2 h-1.5"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="transition-shadow hover:shadow-lg">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="mb-1 text-xs text-muted-foreground">Down</p>
-                    <p className="text-3xl font-bold text-red-600 dark:text-red-400">
-                      {stats.down}
-                    </p>
-                    <Progress
-                      value={(stats.down / stats.total) * 100}
-                      className="mt-2 h-1.5 bg-red-100 dark:bg-red-950 [&>div]:bg-red-600"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="transition-shadow hover:shadow-lg">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="mb-1 text-xs text-muted-foreground">Uptime</p>
-                    <div className="flex items-center justify-center gap-1">
-                      <p className="text-3xl font-bold">{uptime}%</p>
-                      {uptime >= 99 ? (
-                        <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                      ) : (
-                        <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
-                      )}
-                    </div>
-                    <Progress
-                      value={parseFloat(uptime)}
-                      className="mt-2 h-1.5"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="transition-shadow hover:shadow-lg">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="mb-1 text-xs text-muted-foreground">
-                      Health Score
-                    </p>
-                    <div className="flex items-center justify-center gap-1">
-                      <p
-                        className={`text-3xl font-bold ${
-                          stats.healthScore >= 90
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : stats.healthScore >= 75
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}
-                      >
-                        {stats.healthScore}
-                      </p>
-                      <p className="ml-1 text-sm align-baseline">/100</p>
-                    </div>
-                    <div className="mt-2">
-                      <Progress
-                        value={stats.healthScore || 0}
-                        className="h-1.5"
-                      />
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-help">{`${uptimePercent.toFixed(
-                            1
-                          )}% uptime · ${stats.p95Response}ms P95 · ${
-                            stats.issues
-                          } issues`}</span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Health Score = 50% uptime + 30% issue count + 20%
-                          latency (P95)
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="container px-4 py-8 mx-auto">
-        {monitors.length === 0 ? (
-          <div className="py-16 text-center">
-            <Card className="max-w-md mx-auto">
-              <CardContent className="pt-12 pb-12">
-                <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-600/20">
-                  <Activity className="w-12 h-12 text-primary" />
-                </div>
-                <h2 className="mb-3 text-2xl font-semibold">No Monitors Yet</h2>
-                <p className="max-w-sm mx-auto mb-6 text-muted-foreground">
-                  Start monitoring your websites and services by adding your
-                  first monitor.
-                </p>
-                <div className="flex justify-center">
-                  <AddMonitorDialog />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <TabsList className="grid w-full max-w-md grid-cols-4 bg-gray-200">
-                <TabsTrigger value="all" className="flex items-center gap-2">
-                  <Activity className="w-4 h-4" />
-                  All
-                  <Badge variant="secondary" className="ml-1">
-                    {stats.total}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="up" className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Up
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 bg-emerald-100 dark:bg-emerald-950"
-                  >
-                    {stats.up}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="slow" className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Slow
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 bg-amber-100 dark:bg-amber-950"
-                  >
-                    {stats.slow}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="down" className="flex items-center gap-2">
-                  <XCircle className="w-4 h-4" />
-                  Down
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 bg-red-100 dark:bg-red-950"
-                  >
-                    {stats.down}
-                  </Badge>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value={activeTab} className="mt-6">
-              {filteredMonitors.length === 0 ? (
-                <Card>
-                  <CardContent className="pt-12 pb-12 text-center">
-                    <p className="text-muted-foreground">
-                      No monitors in this category
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-                  {filteredMonitors.map((monitor) => (
-                    <MonitorCard
-                      key={monitor.id}
-                      monitor={monitor}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        )}
+  if (isLoading) return (
+    <div className="min-h-screen bg-[#F9FAFB]">
+      <Navbar />
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)]">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
+        <p className="text-gray-500 font-medium">Loading your monitors...</p>
       </div>
     </div>
+  );
+
+  return (
+<>
+    <div className="min-h-screen bg-[#F9FAFB] font-sans pb-20">
+      <Navbar onRefresh={handleRefresh} isRefreshing={isRefreshing} />
+
+      <main className="px-6 lg:px-20 py-10">
+        {/* Header Section */}
+        <div className="flex justify-between items-center mb-10">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Hi, {user?.username || "there"} 👋</h1>
+            <p className="text-gray-500 mt-1">Easily monitor your website uptime here.</p>
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
+          {[
+            { label: "Total Monitors", value: stats.total, icon: <Globe size={16} />, color: "text-black-400" },
+            { label: "Operational", value: stats.up, icon: <Settings size={16} />, color: "text-emerald-500" },
+            { label: "Down", value: stats.down, icon: <TriangleAlert size={16} />, color: "text-red-500" },
+            { label: "Uptime", value: `${uptimePercent.toFixed(1)}%`, icon: <Clock size={16} />, color: "text-black-500" },
+            { label: "Health Score", value: `${healthScore}/100`, icon: <Heart size={16} />, color: "text-orange-500" },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:shadow-md">
+              <div className="flex items-center gap-2 text-gray-400 mb-3">
+                {stat.icon} <span className="text-sm font-medium">{stat.label}</span>
+              </div>
+              <div className={`text-3xl font-bold ${stat.color}`}>{stat.value}</div>
+              <div className="w-full bg-gray-50 h-1.5 mt-4 rounded-full overflow-hidden">
+                <div className={`h-full bg-current opacity-20 ${stat.color}`} style={{ width: `${stat.label === 'Total Monitors' ? 100 : (stat.label === 'Uptime' ? uptimePercent : healthScore)}%` }}></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Content Area */}
+        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+          {/* Custom Tabs */}
+          <div className="flex justify-center p-6 border-b border-gray-50 bg-gray-50/30">
+            <div className="flex bg-gray-100 p-1.5 rounded-full gap-1">
+              {['all', 'up', 'slow', 'down'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all text-sm font-semibold ${
+                    activeTab === tab ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <span className="capitalize">{tab}</span>
+                  <Badge variant="secondary" className="bg-gray-200 text-gray-700 text-[10px] h-4 min-w-[1.25rem] px-1">
+                    {tab === 'all' ? stats.total : stats[tab]}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-8 flex-1 flex flex-col">
+            {monitors.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
+                <Activity size={48} className="text-gray-300 mb-4" />
+                <p className="text-gray-400 font-medium text-lg italic">No monitors found. Add your first monitor to start.</p>
+              </div>
+            ) : filteredMonitors.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
+                <p className="text-gray-400 font-medium italic">No monitors in this category.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                {filteredMonitors.map((monitor) => (
+                  <MonitorCard
+                    key={monitor.id}
+                    monitor={monitor}
+                    onDelete={() => handleDelete(monitor.id)}
+                    onPause={() => handlePause(monitor.id, monitor.paused)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+              <Footer/>
+</>
   );
 }
 

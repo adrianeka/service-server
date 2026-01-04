@@ -1,4 +1,4 @@
-import { ChevronDown, User, Bell, LogOut } from "lucide-react"
+import { ChevronDown, User, Bell, LogOut, RefreshCw } from "lucide-react"
 import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import AddMonitorDialog from "./AddMonitorDialog"
@@ -6,6 +6,7 @@ import { ArrowRightCircle } from "lucide-react"
 
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
   const [currentLanguage, setCurrentLanguage] = useState("English")
   const navigate = useNavigate()
@@ -33,6 +34,12 @@ export default function Navbar() {
   }
   
   const t = translations[currentLanguage]
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
   return (
     <div className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="container mx-auto px-4 py-4">
@@ -127,6 +134,9 @@ export default function Navbar() {
               </>
             ) : (
               <>
+                          <button onClick={handleRefresh} className="p-2.5 text-blue-600 border border-blue-200 rounded-full hover:bg-blue-50 transition-all">
+              <RefreshCw className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`} />
+            </button>
                 <AddMonitorDialog />
 
                 {/* User Dropdown */}

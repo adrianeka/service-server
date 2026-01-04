@@ -1,109 +1,315 @@
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { Card } from "../components/ui/card";
+import {
+  AlertCircle,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Loader2,
+  ArrowLeft,
+  Plus,
+} from "lucide-react";
+import {
+  getUserProfile,
+  updateProfile,
+  changePassword,
+  logout,
+} from "@/service/AuthService";
 
 function ProfilePage() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const {
+    register: registerProfile,
+    handleSubmit: handleSubmitProfile,
+    reset: resetProfile,
+    formState: { errors: profileErrors, isDirty: isProfileDirty },
+  } = useForm();
+
+  const {
+    register: registerPassword,
+    handleSubmit: handleSubmitPassword,
+    reset: resetPassword,
+    watch,
+    formState: { errors: passwordErrors },
+  } = useForm();
+
+  const newPassword = watch("new_password");
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        const userData = JSON.parse(localStorage.getItem("user"));
+        if (!userData || !userData.id) {
+          navigate("/login");
+          return;
+        }
+        const response = await getUserProfile(userData.id);
+        if (response.status && response.data) {
+          setUser(response.data);
+          resetProfile({
+            username: response.data.username,
+            email: response.data.email,
+          });
+        } else {
+          throw new Error("Failed to fetch user profile");
+        }
+      } catch (error) {
+        setProfileError("Failed to load profile data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserProfile();
+  }, [navigate, resetProfile]);
+
+  const onProfileSubmit = async (data) => {
+    setProfileError("");
+    setProfileSuccess("");
+    setProfileLoading(true);
+    try {
+      const response = await updateProfile(user.id, data);
+      if (response.status) {
+        setProfileSuccess("Profile updated successfully!");
+        const updatedUser = { ...user, ...response.data };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        setTimeout(() => setProfileSuccess(""), 3000);
+      }
+    } catch (error) {
+      setProfileError(error.response?.data?.message || "Error updating profile");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const onPasswordSubmit = async (data) => {
+    setPasswordError("");
+    setPasswordSuccess("");
+    setPasswordLoading(true);
+    try {
+      const response = await changePassword(user.id, data);
+      if (response.status) {
+        setPasswordSuccess("Password changed successfully!");
+        resetPassword();
+        setTimeout(async () => {
+          await logout();
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/login");
+        }, 2000);
+      }
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || "Error changing password");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
-        <>
-            <Navbar />
-            <div className="max-w-6xl mx-auto p-8">
-
-                {/* Profile Title Card */}
-                <Card className="mb-10 p-10 bg-white border border-gray-200 rounded-xl shadow-md">
-                    <h1 className="text-4xl font-bold text-gray-900">
-                        Profile
-                    </h1>
-                {/* Profile Information Card */}
-                <Card className="mb-8 p-12 bg-white border border-gray-200 rounded-xl shadow-md mt-5">
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                            Profile Information
-                        </h2>
-                        <p className="text-base text-gray-600">
-                            Update your account's profile information and email address.
-                        </p>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Name
-                            </label>
-                            <input
-                                type="text"
-                                defaultValue="Username"
-                                className="w-full bg-gray-100 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                defaultValue="email@email.com"
-                                className="w-full bg-gray-100 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <button className="bg-blue-600 text-white px-8 py-3 rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md">
-                            Save
-                        </button>
-                    </div>
-                </Card>
-
-                {/* Update Password Card */}
-                <Card className="p-12 bg-white border border-gray-200 rounded-xl shadow-md">
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                            Update Password
-                        </h2>
-                        <p className="text-base text-gray-600">
-                            Ensure your account is using a long, random password to stay secure.
-                        </p>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Current Password
-                            </label>
-                            <input
-                                type="password"
-                                className="w-full bg-gray-100 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                New Password
-                            </label>
-                            <input
-                                type="password"
-                                className="w-full bg-gray-100 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Confirm Password
-                            </label>
-                            <input
-                                type="password"
-                                className="w-full bg-gray-100 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <button className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                            Save
-                        </button>
-                    </div>
-                </Card>
-                </Card>
-
-            </div>
-        </>
+      <div className="flex items-center justify-center h-screen bg-[#F8FAFC]">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20">
+      <Navbar />
+
+      <div className="max-w-5xl px-4 py-8 mx-auto md:px-8">
+        {/* Navigation Link */}
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center gap-2 mb-6 text-sm font-bold text-blue-500 transition-all hover:opacity-70"
+        >
+          <ArrowLeft size={18} strokeWidth={3} />
+          Go to Dashboard
+        </Link>
+
+        {/* 1. Header Banner Profile */}
+        <div className="relative h-48 md:h-56 bg-gradient-to-r from-blue-400 to-blue-500 rounded-[2.5rem] overflow-hidden shadow-lg shadow-blue-100 mb-10">
+          <div className="absolute inset-0 flex items-center justify-center opacity-20">
+            <div className="absolute w-96 h-96 border-[40px] border-white rounded-full -left-20 -bottom-20"></div>
+            <div className="absolute w-64 h-64 border-[30px] border-white rounded-full right-10 -top-10"></div>
+          </div>
+          <div className="relative flex items-center h-full px-12">
+            <h1 className="text-4xl font-black tracking-tight text-white md:text-5xl">
+              My Profile
+            </h1>
+          </div>
+          <div className="absolute w-48 h-48 right-12 bottom-0 hidden md:block">
+            <img 
+              src="/Image4.png" // Ganti dengan asset 3D karakter Anda
+              alt="Illustration" 
+              className="object-contain w-full h-full"
+            />
+          </div>
+        </div>
+
+        {/* 2. Avatar & Change Image */}
+        <div className="flex items-center gap-6 px-4 mb-10">
+          <div className="flex-shrink-0 w-24 h-24 bg-white border-4 border-white shadow-xl rounded-full overflow-hidden">
+            <img 
+              src={user?.avatar || "https://ui-avatars.com/api/?name=" + user?.username} 
+              alt="User" 
+              className="object-cover w-full h-full"
+            />
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <button className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+              <Plus size={18} strokeWidth={3} /> Change Image
+            </button>
+            <button className="text-sm font-bold text-blue-500 hover:underline">
+              Remove Image
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          {/* 3. Profile Information Card */}
+          <Card className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-slate-100">
+            <h2 className="mb-1 text-2xl font-black text-slate-800">Profile Information</h2>
+            <p className="mb-8 text-sm font-medium text-slate-400">
+              Manage your account username and email address.
+            </p>
+
+            {(profileSuccess || profileError) && (
+              <div className={`flex items-center gap-2 p-4 mb-6 rounded-2xl border ${profileSuccess ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+                {profileSuccess ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+                <span className="text-sm font-bold">{profileSuccess || profileError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitProfile(onProfileSubmit)} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Username</label>
+                <input
+                  {...registerProfile("username", { required: "Username is required" })}
+                  className="w-full px-6 py-4 transition-all bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white font-bold text-slate-700"
+                  disabled={profileLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Email Address</label>
+                <input
+                  type="email"
+                  {...registerProfile("email", { required: "Email is required" })}
+                  className="w-full px-6 py-4 transition-all bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white font-bold text-slate-700"
+                  disabled={profileLoading}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={profileLoading || !isProfileDirty}
+                className={`px-10 py-3.5 rounded-full font-black text-sm shadow-xl transition-all ${
+                  !isProfileDirty || profileLoading
+                    ? "bg-slate-300 text-white cursor-not-allowed shadow-slate-100"
+                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
+                }`}
+              >
+                {profileLoading ? "Saving..." : "Save Changes"}
+              </button>
+            </form>
+          </Card>
+
+          {/* 4. Update Password Card */}
+          <Card className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-slate-100">
+            <h2 className="mb-1 text-2xl font-black text-slate-800">Update Password</h2>
+            <p className="mb-8 text-sm font-medium text-slate-400">
+              Use a strong password to keep your account secure.
+            </p>
+
+            {(passwordSuccess || passwordError) && (
+              <div className={`flex items-center gap-2 p-4 mb-6 rounded-2xl border ${passwordSuccess ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+                {passwordSuccess ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+                <span className="text-sm font-bold">{passwordSuccess || passwordError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    {...registerPassword("current_password", { required: "Required" })}
+                    className="w-full px-6 py-4 transition-all bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white font-bold text-slate-700"
+                  />
+                  <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute text-slate-400 right-5 top-1/2 -translate-y-1/2">
+                    {showCurrentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    {...registerPassword("new_password", { required: "Required", minLength: 8 })}
+                    className="w-full px-6 py-4 transition-all bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white font-bold text-slate-700"
+                  />
+                  <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute text-slate-400 right-5 top-1/2 -translate-y-1/2">
+                    {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                <p className="text-[10px] font-bold text-blue-500 ml-1 italic tracking-tight">
+                  ● Use 8 or more characters with a mix of letters, numbers, and symbols.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    {...registerPassword("new_password_confirmation", { 
+                      required: "Required", 
+                      validate: v => v === newPassword || "Mismatch" 
+                    })}
+                    className="w-full px-6 py-4 transition-all bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white font-bold text-slate-700"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute text-slate-400 right-5 top-1/2 -translate-y-1/2">
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                <p className="text-[10px] font-bold text-blue-500 ml-1 italic tracking-tight">
+                  ● Make sure both passwords match.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={passwordLoading}
+                className="bg-slate-300 text-white px-10 py-3.5 rounded-full font-black text-sm shadow-xl shadow-slate-100 hover:bg-blue-600 hover:shadow-blue-200 transition-all"
+              >
+                {passwordLoading ? "Processing..." : "Update Password"}
+              </button>
+            </form>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default ProfilePage;

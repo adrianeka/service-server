@@ -1,50 +1,96 @@
-import { CheckCircle, AlertTriangle, XCircle, Clock, ExternalLink, Trash2, Activity, MoreVertical, Pause, Play, Edit, TrendingUp, History, Globe, Network, Wifi, GripVertical } from 'lucide-react';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Progress } from './ui/progress';
-import MonitorHistoryDialog from './MonitorHistoryDialog';
-import EditMonitorDialog from './EditMonitorDialog';
-import DeleteMonitorDialog from './DeleteMonitorDialog';
-import DowntimeDialog from './DowntimeDialog';
-import { formatDistanceToNow } from 'date-fns';
-import { useState } from 'react';
-import { parseUTC } from '../lib/timezone';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-import { getMonitorUptime, getMonitorUptimeChart, getMonitorResponseTimeChart, pauseMonitor } from '../service/ApiService';
+import {
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Clock,
+  ExternalLink,
+  Trash2,
+  Activity,
+  MoreVertical,
+  Pause,
+  Play,
+  Edit,
+  History,
+  Globe,
+  GripVertical,
+} from "lucide-react";
+import { Card, CardContent, CardHeader } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Progress } from "./ui/progress";
+import MonitorHistoryDialog from "./MonitorHistoryDialog";
+import EditMonitorDialog from "./EditMonitorDialog";
+import DeleteMonitorDialog from "./DeleteMonitorDialog";
+import DowntimeDialog from "./DowntimeDialog";
+import { formatDistanceToNow } from "date-fns";
+import { useState } from "react";
+import { parseUTC } from "../lib/timezone";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  getMonitorUptime,
+  getMonitorUptimeChart,
+  getMonitorResponseTimeChart,
+  pauseMonitor,
+} from "../service/ApiService";
+
+/**
+ * Fungsi helper untuk mendapatkan styling berdasarkan status
+ */
 const getStatusInfo = (status) => {
   switch (status) {
-    case 'up':
-      return { 
-        bgColor: 'bg-emerald-500/10 dark:bg-emerald-500/20', 
-        textColor: 'text-emerald-600 dark:text-emerald-400',
+    case "up":
+      return {
+        bgColor: "bg-emerald-50 border-emerald-100",
+        textColor: "text-emerald-600",
+        badgeColor: "bg-emerald-500",
+        chartColor: "#10b981", // Hijau
         icon: CheckCircle,
         label: 'Operational'
       };
-    case 'slow':
-      return { 
-        bgColor: 'bg-amber-500/10 dark:bg-amber-500/20', 
-        textColor: 'text-amber-600 dark:text-amber-400',
+    case "slow":
+      return {
+        bgColor: "bg-amber-50 border-amber-100",
+        textColor: "text-amber-600",
+        badgeColor: "bg-amber-500",
+        chartColor: "#f59e0b", // Kuning/Amber
         icon: AlertTriangle,
         label: 'Degraded'
       };
-    case 'down':
-      return { 
-        bgColor: 'bg-red-500/10 dark:bg-red-500/20', 
-        textColor: 'text-red-600 dark:text-red-400',
+    case "down":
+      return {
+        bgColor: "bg-red-50 border-red-100",
+        textColor: "text-red-500",
+        badgeColor: "bg-red-400",
+        chartColor: "#ef4444", // Merah
         icon: XCircle,
         label: 'Down'
       };
     default:
-      return { 
-        bgColor: 'bg-blue-500/10 dark:bg-blue-500/20', 
-        textColor: 'text-blue-600 dark:text-blue-400 animate-pulse',
+      return {
+        bgColor: "bg-blue-50 border-blue-100",
+        textColor: "text-blue-500",
+        badgeColor: "bg-blue-400",
+        chartColor: "#3b82f6", // Biru
         icon: Clock,
-        label: 'Collecting data...'
+        label: "Checking...",
       };
   }
 };
@@ -56,6 +102,7 @@ const MonitorCard = ({ monitor, onDelete }) => {
   const [downtimeOpen, setDowntimeOpen] = useState(false);
   const queryClient = useQueryClient();
 
+  // --- Data Fetching ---
   const { data: uptimeData, isLoading: uptimeLoading } = useQuery({
     queryKey: ['monitor-uptime', monitor.id],
     queryFn: () => getMonitorUptime(monitor.id),
@@ -87,266 +134,209 @@ const MonitorCard = ({ monitor, onDelete }) => {
     pauseMutation.mutate(!monitor.paused);
   };
 
-  const { bgColor, textColor, icon: StatusIcon, label } = getStatusInfo(monitor.status);
+ const handleDetailMonitor = (id) => {
+  navigate(`/monitor/${id}`);
+};
+  // --- Styling Helpers ---
+  const { bgColor, textColor, badgeColor, chartColor, icon: StatusIcon, label } = getStatusInfo(monitor.status);
 
   const getResponseTimeColor = (time) => {
-    if (time < 500) return 'text-emerald-600 dark:text-emerald-400';
-    if (time < 2000) return 'text-amber-600 dark:text-amber-400';
-    return 'text-red-600 dark:text-red-400';
+    if (time < 500) return "text-emerald-500 font-black";
+    if (time < 2000) return "text-amber-500 font-black";
+    return "text-red-500 font-black";
   };
 
   const truncateText = (text, maxWords = 8) => {
     const words = text.split(/\s+/);
-    if (words.length > maxWords) {
-      return words.slice(0, maxWords).join(' ') + '...';
-    }
+    if (words.length > maxWords) return words.slice(0, maxWords).join(" ") + "...";
     return text;
   };
 
   return (
-    <Card className={`group relative hover:shadow-xl transition-all duration-300 border-l-4 ${monitor.paused === 1 ? 'opacity-60' : ''}`} style={{ borderLeftColor: monitor.status === 'up' ? '#10b981' : monitor.status === 'slow' ? '#f59e0b' : '#ef4444' }}>
-      <CardHeader className="p-4 pb-0">
-        <div className="flex items-start justify-between w-full">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              {monitor.favicon && monitor.type === 'http' && (
-                <img 
-                  src={monitor.favicon} 
-                  alt="Favicon" 
-                  className="h-6 w-6 rounded-sm flex-shrink-0" 
-                  onError={(e) => e.target.style.display = 'none'}
-                />
-              )}
-              <Activity className="h-4 w-4 text-primary flex-shrink-0" />
-              <h3 className="font-semibold text-lg truncate">{truncateText(monitor.name)}</h3>
-              <Badge variant="outline" className="flex-shrink-0 gap-1">
-                {(monitor.type === 'dns' || monitor.type?.toLowerCase() === 'dns') ? (
-                  <>
-                    <Network className="h-3 w-3" />
-                    DNS
-                  </>
-                ) : (monitor.type === 'icmp' || monitor.type?.toLowerCase() === 'icmp') ? (
-                  <>
-                    <Wifi className="h-3 w-3" />
-                    ICMP
-                  </>
-                ) : (
-                  <>
-                    <Globe className="h-3 w-3" />
-                    HTTP
-                  </>
-                )}
-              </Badge>
-              {monitor.paused === 1 && (
-                <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 dark:text-amber-300 ml-auto flex-shrink-0">Paused</Badge>
-              )}
+    <Card className={`group relative hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] border-slate-100 overflow-hidden bg-white ${monitor.paused === 1 ? "opacity-60" : ""}`}>
+      
+      <CardHeader className="p-7 pb-2">
+        <div className="flex items-start justify-between">
+          {/* Brand & Identity */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {monitor.favicon && monitor.type === "http" ? (
+              <img 
+                src={monitor.favicon} 
+                className="w-10 h-10 rounded-full shadow-sm border border-slate-50" 
+                alt="icon" 
+                onError={(e) => (e.target.style.display = "none")}
+              />
+            ) : (
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white italic font-black text-[10px] shadow-lg shadow-blue-100">
+                {monitor.name.substring(0, 2).toUpperCase()}
+              </div>
+            )}
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-bold text-slate-800 truncate leading-none">
+                  {truncateText(monitor.name, 5)}
+                </h3>
+                <Badge variant="secondary" className="bg-slate-100 text-slate-400 border-none rounded-full text-[9px] font-black px-2 py-0.5">
+                  {monitor.type?.toUpperCase() || 'HTTP'}
+                </Badge>
+              </div>
+              <p className="text-sm text-slate-400 truncate mt-1">{monitor.url}</p>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a 
-                  href={monitor.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 truncate group/link"
-                >
-                  <span className="truncate">{truncateText(monitor.url)}</span>
-                  <ExternalLink className="h-3 w-3 opacity-0 group-hover/link:opacity-100 transition-opacity flex-shrink-0" />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{monitor.url}</p>
-              </TooltipContent>
-            </Tooltip>
           </div>
-          
-          <div className="flex items-center gap-2">
+
+          {/* DRAG HANDLE & MENU ACTION */}
+          <div className="flex items-center gap-1 relative z-30">
+            {/* AREA KHUSUS GESER (DRAG HANDLE) */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <span data-swapy-handle className="drag-handle text-muted-foreground opacity-60 hover:opacity-100 transition" aria-hidden>
-                  <GripVertical className="h-4 w-4" />
-                </span>
+                <div 
+                  data-swapy-handle 
+                  className="flex items-center justify-center w-10 h-10 rounded-full cursor-grab active:cursor-grabbing hover:bg-slate-50 transition-colors text-slate-300 hover:text-slate-500"
+                >
+                  <GripVertical className="w-6 h-6" />
+                </div>
               </TooltipTrigger>
-              <TooltipContent>Drag to reorder</TooltipContent>
+              <TooltipContent side="top">Tahan untuk geser urutan</TooltipContent>
             </Tooltip>
+
+            {/* TOMBOL MENU TITIK TIGA */}
             <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 transition-opacity flex-shrink-0"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem className="cursor-pointer" onClick={() => setHistoryOpen(true)}>
-                <History className="h-4 w-4 mr-2" />
-                View History
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => setDowntimeOpen(true)}>
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                View Downtime
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => setEditOpen(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Monitor
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer" onClick={handleTogglePause}>
-                {monitor.paused ? (
-                  <>
-                    <Play className="h-4 w-4 mr-2" />
-                    Resume Monitoring
-                  </>
-                ) : (
-                  <>
-                    <Pause className="h-4 w-4 mr-2" />
-                    Pause Monitoring
-                  </>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="cursor-pointer text-destructive focus:text-destructive"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Monitor
-              </DropdownMenuItem>
-            </DropdownMenuContent>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="rounded-full w-10 h-10 p-0 hover:bg-slate-50">
+                  <MoreVertical className="w-5 h-5 text-slate-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-xl border-slate-100">
+                <DropdownMenuItem   onClick={() => handleDetailMonitor(monitor.id)} className="rounded-xl cursor-pointer">
+                  <Edit className="w-4 h-4 mr-2" /> Detail Monitor
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleTogglePause} className="rounded-xl cursor-pointer">
+                  {monitor.paused ? <><Play className="w-4 h-4 mr-2" /> Resume</> : <><Pause className="w-4 h-4 mr-2" /> Pause Monitoring</>}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setDeleteOpen(true)} className="rounded-xl cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50">
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 p-4 pt-3">
-        <div className={`flex items-center justify-between p-3 rounded-lg ${bgColor}`}>
-          <div className="flex items-center gap-2">
-            <StatusIcon className={`h-5 w-5 ${textColor}`} />
-            <span className={`font-semibold ${textColor}`}>{label}</span>
+
+      <CardContent className="p-7 pt-4 space-y-6">
+        
+        {/* Status Highlight Box */}
+        <div className={`flex items-center justify-between p-4 rounded-[1.5rem] border ${bgColor} transition-all duration-500`}>
+          <div className="flex items-center gap-3">
+            <StatusIcon className={`h-6 w-6 ${textColor}`} />
+            <span className={`font-bold text-lg tracking-tight ${textColor}`}>{label}</span>
           </div>
-          <Badge className={`${bgColor} ${textColor} border-0`}>
-            {monitor.status === 'unknown' ? '⏳ WAITING' : monitor.status.toUpperCase()}
+          <Badge className={`${badgeColor} text-white border-0 rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest`}>
+            {monitor.status?.toUpperCase() || 'UNKNOWN'}
           </Badge>
         </div>
 
-        <div className="space-y-2">
+        {/* Uptime Progress Bar */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground font-medium">Uptime</span>
-            {uptimeLoading ? (
-              <span className="text-xs text-muted-foreground animate-pulse">Loading...</span>
-            ) : uptimePercentage !== null ? (
-              <span className={`font-bold ${uptimePercentage >= 99 ? 'text-emerald-600 dark:text-emerald-400' : uptimePercentage >= 95 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
-                {uptimePercentage}%
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">No data</span>
-            )}
+            <span className="font-bold text-slate-400 uppercase text-[11px] tracking-wider">Uptime Percentage</span>
+            <span className={`font-black text-lg ${uptimePercentage < 90 ? 'text-orange-500' : 'text-blue-600'}`}>
+              {uptimeLoading ? "..." : `${uptimePercentage || 0}%`}
+            </span>
           </div>
-          <Progress 
-            value={uptimePercentage || 0} 
-            className="h-2" 
-          />
+          <Progress value={uptimePercentage || 0} className="h-2.5 bg-slate-100" />
         </div>
 
+        {/* Real-time Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground font-medium">Response Time</p>
-            <p className={`text-2xl font-bold ${getResponseTimeColor(monitor.response_time)}`}>
-              {monitor.response_time}<span className="text-sm ml-1">ms</span>
+            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Response Time</p>
+            <p className={`text-3xl font-black ${getResponseTimeColor(monitor.response_time)}`}>
+              {monitor.response_time}<span className="text-sm ml-1 font-bold opacity-30">ms</span>
             </p>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground font-medium">Last Check</p>
-            <p className="text-sm font-semibold text-foreground">
+          <div className="space-y-1 text-right">
+            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Last Check</p>
+            <p className="text-sm font-bold text-slate-600 mt-2 italic">
               {formatDistanceToNow(parseUTC(monitor.last_checked), { addSuffix: true })}
             </p>
           </div>
         </div>
 
-        {/* Average Stats */}
-        <div className="grid grid-cols-3 gap-3 p-3 bg-muted/20 rounded-lg">
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground font-medium">Avg Response</p>
-            <p className="text-sm font-bold text-primary mt-1">
-              {responseTimeChartData.length > 0 
-                ? Math.round(responseTimeChartData.reduce((acc, d) => acc + d.avgResponse, 0) / responseTimeChartData.length)
-                : monitor.response_time
-              }ms
+        {/* Averages Box Section */}
+        <div className="grid grid-cols-3 py-5 border border-slate-50 rounded-[1.5rem] bg-slate-50/50">
+          <div className="text-center border-r border-slate-100 px-1">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Avg Res</p>
+            <p className="text-sm font-black text-blue-500 mt-1">
+              {responseTimeChartData.length > 0 ? Math.round(responseTimeChartData.reduce((acc, d) => acc + d.avgResponse, 0) / responseTimeChartData.length) : monitor.response_time} <span className="text-[9px] opacity-60 font-medium">ms</span>
             </p>
           </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground font-medium">Min Response</p>
-            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-              {responseTimeChartData.length > 0 
-                ? Math.min(...responseTimeChartData.map(d => d.avgResponse)).toFixed(0)
-                : monitor.response_time
-              }ms
+          <div className="text-center border-r border-slate-100 px-1">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Min Res</p>
+            <p className="text-sm font-black text-emerald-500 mt-1">
+              {responseTimeChartData.length > 0 ? Math.min(...responseTimeChartData.map(d => d.avgResponse)).toFixed(0) : monitor.response_time} <span className="text-[9px] opacity-60 font-medium">ms</span>
             </p>
           </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground font-medium">Max Response</p>
-            <p className="text-sm font-bold text-red-600 dark:text-red-400 mt-1">
-              {responseTimeChartData.length > 0 
-                ? Math.max(...responseTimeChartData.map(d => d.avgResponse)).toFixed(0)
-                : monitor.response_time
-              }ms
+          <div className="text-center px-1">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Max Res</p>
+            <p className="text-sm font-black text-red-400 mt-1">
+               {responseTimeChartData.length > 0 ? Math.max(...responseTimeChartData.map(d => d.avgResponse)).toFixed(0) : monitor.response_time} <span className="text-[9px] opacity-60 font-medium">ms</span>
             </p>
           </div>
         </div>
 
-        {/* Uptime Chart */}
-        <div className="pt-4 border-t border-border">
-          <p className="text-xs font-semibold text-muted-foreground mb-3">24-Hour Uptime</p>
-          {uptimeChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart 
-                data={uptimeChartData}
-                margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
-              >
-                <defs>
-                  <linearGradient id={`uptimeGradient-${monitor.id}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="time" 
-                  className="text-xs" 
-                  tick={{ fontSize: 9 }}
-                  interval="preserveStartEnd"
-                  minTickGap={30}
-                />
-                <YAxis 
-                  domain={[0, 100]} 
-                  className="text-xs"
-                  tick={{ fontSize: 10 }}
-                  width={35}
-                />
-                <RechartsTooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                  formatter={(value) => `${value.toFixed(1)}%`}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="uptime" 
-                  stroke="#10b981" 
-                  strokeWidth={2}
-                  fill={`url(#uptimeGradient-${monitor.id})`}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
-              <p>Collecting data...</p>
-            </div>
-          )}
+        {/* Area Chart Section with Dynamic Colors */}
+        <div className="pt-2">
+          <p className="mb-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">24-Hour Performance</p>
+          <div className="h-[140px] w-full relative">
+            {uptimeChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={uptimeChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id={`chartColor-${monitor.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chartColor} stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor={chartColor} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="time" hide />
+                  <YAxis domain={[0, 100]} hide />
+                  <RechartsTooltip 
+                    cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+                    contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }}
+                    formatter={(val) => [`${val.toFixed(1)}%`, 'Uptime']}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="uptime" 
+                    stroke={chartColor} 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill={`url(#chartColor-${monitor.id})`} 
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                <Activity className="w-6 h-6 text-slate-300 animate-pulse mb-2" />
+                <span className="text-xs text-slate-400 font-medium">Collecting history...</span>
+              </div>
+            )}
+            
+            {/* Timeline Legends */}
+            {uptimeChartData.length > 0 && (
+              <div className="flex justify-between mt-2 px-1 text-[9px] font-black text-slate-300 uppercase tracking-tighter">
+                <span>{uptimeChartData[0].time}</span>
+                <span>{uptimeChartData[Math.floor(uptimeChartData.length / 2)]?.time}</span>
+                <span>{uptimeChartData[uptimeChartData.length - 1].time}</span>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
+
+      {/* Logic Dialog Components */}
       <EditMonitorDialog open={editOpen} onOpenChange={setEditOpen} monitor={monitor} />
       <MonitorHistoryDialog open={historyOpen} onOpenChange={setHistoryOpen} monitor={monitor} />
       <DeleteMonitorDialog open={deleteOpen} onOpenChange={setDeleteOpen} monitor={monitor} />
