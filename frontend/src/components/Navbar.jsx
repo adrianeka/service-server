@@ -84,13 +84,13 @@ export default function Navbar() {
           {/* Logo & Title */}
           <div className="flex items-center gap-3">
             <img
-              src="/logouptime.png"
+              src="https://seeklogo.com/images/P/padepokan-79-logo-5794F3FD14-seeklogo.com.png"
               alt="UptimeKit Logo"
-              className="h-10 w-10"
+              className="h-10 w-40"
             />
             <div className="flex flex-col gap-2">
               <h1 className="font-inter text-[28px] font-semibold leading-[73%] text-black">
-                UptimeKit
+                KeepUply
               </h1>
               <p className="font-inter text-[11px] font-normal leading-[8px] text-black hidden sm:block">
                 Real-Time Monitoring You Can Trust.
@@ -167,7 +167,7 @@ export default function Navbar() {
                         <button onClick={() => { navigate('/profile'); setIsDropdownOpen(false); }} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100">
                           <User className="h-4 w-4" /> {t.profile}
                         </button>
-                        <button onClick={() => { navigate('/notifications'); setIsDropdownOpen(false); }} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100">
+                        <button onClick={() => { navigate('/notification'); setIsDropdownOpen(false); }} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100">
                           <Bell className="h-4 w-4" /> {t.notification}
                         </button>
                         <div className="my-1 border-t" />

@@ -1,15 +1,21 @@
-import { AlertTriangle, Trash2, X } from "lucide-react";
+// components/DeleteNotificationDialog.jsx
+import { AlertTriangle, Trash2, X, Loader2, Bell } from "lucide-react";
 
-export default function DeleteNotificationModal({ open, onClose, onDelete }) {
-  if (!open) return null; // ⬅️ PENTING
+export default function DeleteNotificationDialog({
+  open,
+  onClose,
+  onDelete,
+  isLoading = false,
+}) {
+  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+      <div className="w-full max-w-md bg-white shadow-2xl rounded-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900">
@@ -20,6 +26,7 @@ export default function DeleteNotificationModal({ open, onClose, onDelete }) {
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
+            disabled={isLoading}
           >
             <X className="w-5 h-5" />
           </button>
@@ -27,14 +34,17 @@ export default function DeleteNotificationModal({ open, onClose, onDelete }) {
 
         {/* Content */}
         <div className="p-8 text-center">
-            <div className="flex justify-center">
-            <img src="/bell.png" className="w-[128px] rotate-[15deg]" />
+          <div className="flex justify-center mb-4">
+            <div className="flex items-center justify-center w-24 h-24 bg-red-100 rounded-full">
+              <img src="/bell.png" className="w-[128px] rotate-[15deg]" />
             </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          </div>
+          <h3 className="mb-2 text-lg font-semibold text-gray-900">
             Are you sure you want to delete this notification?
           </h3>
           <p className="text-sm text-gray-600">
-            You will stop receiving alerts for the selected monitor.
+            You will stop receiving alerts for monitors using this notification
+            setting. This action cannot be undone.
           </p>
         </div>
 
@@ -42,7 +52,8 @@ export default function DeleteNotificationModal({ open, onClose, onDelete }) {
         <div className="flex justify-center gap-4 p-6 border-t">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 border rounded-full flex items-center gap-2"
+            disabled={isLoading}
+            className="px-6 py-2.5 border border-gray-300 rounded-full flex items-center gap-2 hover:bg-gray-50 disabled:opacity-50"
           >
             <X className="w-4 h-4" />
             Cancel
@@ -50,10 +61,15 @@ export default function DeleteNotificationModal({ open, onClose, onDelete }) {
 
           <button
             onClick={onDelete}
-            className="px-6 py-2.5 bg-red-600 text-white rounded-full flex items-center gap-2"
+            disabled={isLoading}
+            className="px-6 py-2.5 bg-red-600 text-white rounded-full flex items-center gap-2 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Trash2 className="w-4 h-4" />
-            Delete
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            {isLoading ? "Deleting..." : "Delete"}
           </button>
         </div>
       </div>

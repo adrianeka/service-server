@@ -21,6 +21,7 @@ import {
   getNotificationSettings,
   deleteNotificationSetting,
 } from "@/service/ApiService";
+import Footer2 from "../components/Footer2";
 
 function NotificationPage() {
   const navigate = useNavigate();
@@ -113,6 +114,7 @@ function NotificationPage() {
   }
 
   return (
+<>
     <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20 overflow-x-hidden">
       <Navbar />
 
@@ -237,6 +239,8 @@ function NotificationPage() {
         </div>
       )}
     </div>
+  <Footer2/>
+  </>
   );
 }
 

@@ -1,222 +1,243 @@
-import { X, Bell } from 'lucide-react';
-import { useState } from 'react';
+// components/AddNotificationDialog.jsx
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  Plus,
+  X,
+  Bell,
+  ChevronDown,
+  AlertCircle,
+} from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createNotificationSetting } from "@/service/ApiService";
 
-export default function NotificationModal({ open, onClose, onSubmit }) {
-  if (!open) return null;
+const AddNotificationDialog = ({ open, onOpenChange, onSuccess }) => {
+  const queryClient = useQueryClient();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    host: '',
-    port: '587',
-    security: 'None',
-    fromEmail: '',
-    toEmail: '',
-    username: ''
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      description: "",
+      host: "",
+      port: 587,
+      security: "tls",
+      from_email: "",
+      to_email: "",
+      username: "",
+      password: "",
+    },
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Reset form saat dialog dibuka
+  useEffect(() => {
+    if (open) {
+      reset();
+    }
+  }, [open, reset]);
 
-  const handleSubmit = () => {
-    onSubmit(formData);
-    onClose();
+  const createMutation = useMutation({
+    mutationFn: createNotificationSetting,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notificationSettings"] });
+      onOpenChange(false);
+      reset();
+      if (onSuccess) onSuccess();
+    },
+    onError: (error) => {
+      alert(error.response?.data?.message || "Failed to create notification");
+    },
+  });
+
+  const onSubmit = (data) => {
+    createMutation.mutate({
+      ...data,
+      port: parseInt(data.port),
+    });
   };
 
   return (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-blue-600" />
-              <h2 className="text-xl font-bold text-blue-600">Add Notification</h2>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* Container Modal dengan Radius Besar */}
+      <DialogContent className="max-w-4xl p-0 border-none rounded-[2rem] shadow-2xl overflow-hidden bg-white max-h-[95vh] flex flex-col">
+        
+        {/* Header Section */}
+        <div className="p-8 pb-4">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <div className="p-2 text-blue-600 rounded-xl bg-blue-50">
+                <Bell size={24} fill="currentColor" />
+              </div>
+              <DialogTitle className="text-2xl font-black tracking-tight text-slate-800">
+                Add Notification
+              </DialogTitle>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+            <button 
+              onClick={() => onOpenChange(false)}
+              className="p-2 transition-colors rounded-full text-slate-400 hover:bg-slate-50 hover:text-slate-600"
             >
-              <X className="w-5 h-5" />
+              <X size={20} strokeWidth={3} />
             </button>
           </div>
-          <p className="text-sm text-gray-500">Configure notifications to receive alerts from your monitored websites.</p>
+          <DialogDescription className="text-sm font-medium text-slate-400">
+            Configure notifications to receive alerts from your monitored websites.
+          </DialogDescription>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Basic Information */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Basic Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Name*
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Notification name (e.g. API Server Alert)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description*
-                </label>
-                <input
-                  type="text"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Short description of this notification"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
+        {/* Form Body dengan Scroll Internal */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col overflow-hidden">
+          <div className="flex-1 px-8 py-4 space-y-8 overflow-y-auto custom-scrollbar">
+            
+            {/* Section 1: Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-[13px] font-black text-slate-700 uppercase tracking-wider">Basic Information</h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    {...register("name", { required: "Required" })}
+                    placeholder="Notification name (e.g. API Server Alert)"
+                    className="h-12 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description <span className="text-red-500">*</span></Label>
+                  <Input
+                    {...register("description", { required: "Required" })}
+                    placeholder="Short description of this notification"
+                    className="h-12 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:bg-white transition-all"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Server Configuration */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Server Configuration</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Host*
-                </label>
-                <input
-                  type="text"
-                  name="host"
-                  value={formData.host}
-                  onChange={handleChange}
-                  placeholder="smtp.example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Port*
-                </label>
-                <input
-                  type="text"
-                  name="port"
-                  value={formData.port}
-                  onChange={handleChange}
-                  placeholder="587"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
+            {/* Section 2: Server Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-[13px] font-black text-slate-700 uppercase tracking-wider">Server Configuration</h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Host <span className="text-red-500">*</span></Label>
+                  <Input
+                    {...register("host", { required: "Required" })}
+                    placeholder="smtp.example.com"
+                    className="h-12 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Port <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="number"
+                    {...register("port", { required: "Required" })}
+                    placeholder="587"
+                    className="h-12 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Security <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <select
+                      {...register("security")}
+                      className="w-full h-12 px-5 font-bold transition-all border outline-none appearance-none bg-slate-50 border-slate-100 rounded-2xl text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/10"
+                    >
+                      <option value="tls">TLS</option>
+                      <option value="ssl">SSL</option>
+                      <option value="none">None</option>
+                    </select>
+                    <ChevronDown className="absolute w-5 h-5 pointer-events-none right-5 top-3.5 text-slate-300" />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Security*
-              </label>
-              <div className="relative">
-                <select
-                  name="security"
-                  value={formData.security}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none bg-gray-50"
-                >
-                  <option>None</option>
-                  <option>TLS</option>
-                  <option>SSL</option>
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-xs text-gray-600">👤</span>
-                  </div>
+
+            {/* Section 3: Email Settings */}
+            <div className="space-y-4">
+              <h3 className="text-[13px] font-black text-slate-700 uppercase tracking-wider">Email Settings</h3>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">From Email <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="email"
+                    {...register("from_email", { required: "Required" })}
+                    placeholder="alerts@example.com"
+                    className="h-12 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">To Email <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="email"
+                    {...register("to_email", { required: "Required" })}
+                    placeholder="recipient@example.com"
+                    className="h-12 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Username <span className="text-red-500">*</span></Label>
+                  <Input
+                    {...register("username", { required: "Required" })}
+                    placeholder="Email username or SMTP user"
+                    className="h-12 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="password"
+                    {...register("password", { required: "Required" })}
+                    placeholder="Enter password"
+                    className="h-12 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-slate-700 focus:bg-white transition-all"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Email Settings */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Email Settings</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  From Email*
-                </label>
-                <input
-                  type="email"
-                  name="fromEmail"
-                  value={formData.fromEmail}
-                  onChange={handleChange}
-                  placeholder="alerts@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  To Email*
-                </label>
-                <input
-                  type="email"
-                  name="toEmail"
-                  value={formData.toEmail}
-                  onChange={handleChange}
-                  placeholder="recipient@example.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Username*
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="Email username or SMTP user"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password*
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="SMTP password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-gray-50"
-                />
-              </div>
-            </div>
+          {/* Footer: Action Buttons */}
+          <div className="flex justify-end gap-4 p-8 border-t border-slate-50 bg-slate-50/30">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="px-10 h-12 rounded-full border-2 border-blue-500 text-blue-500 font-black text-xs hover:bg-blue-50 transition-all flex items-center gap-2"
+            >
+              <X size={16} strokeWidth={3} /> Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={createMutation.isPending || !isValid}
+              className={`px-10 h-12 rounded-full font-black text-xs text-white shadow-xl transition-all flex items-center gap-2 ${
+                createMutation.isPending || !isValid 
+                  ? "bg-slate-300 shadow-slate-100 cursor-not-allowed" 
+                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-100"
+              }`}
+            >
+              {createMutation.isPending ? (
+                <div className="w-4 h-4 border-2 border-white rounded-full animate-spin border-t-transparent" />
+              ) : (
+                <Plus size={16} strokeWidth={3} />
+              )}
+              {createMutation.isPending ? "Adding..." : "Add"}
+            </Button>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-          >
-            <X className="w-4 h-4" />
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-400 rounded-lg hover:bg-gray-500 transition-colors"
-          >
-            + Add
-          </button>
-        </div>
-      </div>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
-}
+};
+
+export default AddNotificationDialog;

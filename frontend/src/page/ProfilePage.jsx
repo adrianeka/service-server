@@ -18,6 +18,7 @@ import {
   changePassword,
   logout,
 } from "@/service/AuthService";
+import Footer2 from "../components/Footer2";
 
 function ProfilePage() {
   const navigate = useNavigate();
@@ -130,6 +131,7 @@ function ProfilePage() {
   }
 
   return (
+<>
     <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20">
       <Navbar />
 
@@ -309,6 +311,8 @@ function ProfilePage() {
         </div>
       </div>
     </div>
+          <Footer2/>
+</>
   );
 }
 

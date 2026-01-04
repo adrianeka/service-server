@@ -11,13 +11,11 @@ const Footer = () => {
           {/* Bagian Kiri: Logo & Deskripsi */}
           <div className="flex flex-col space-y-3 max-w-xs">
             <div className="flex items-center space-x-2">
-              <div className="bg-[#5c5cfc] p-1.5 rounded-md">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              <div className="p-1.5 rounded-md">
+                <img src='https://seeklogo.com/images/P/padepokan-79-logo-5794F3FD14-seeklogo.com.png'/>
               </div>
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-gray-800 leading-none">UptimeKit</span>
+                <span className="text-lg font-bold text-gray-800 leading-none">KeepUply</span>
                 <span className="text-[10px] text-gray-400">Monitor your services in real-time</span>
               </div>
             </div>

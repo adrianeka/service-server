@@ -43,7 +43,7 @@ function App() {
         <div className="min-h-screen bg-background text-foreground">
           <Router>
             <Routes>
-              <Route path="/" element={<TestPage />} />
+              <Route path="/" element={<LoginPage />} />
               <Route path="/Login" element={<LoginPage />} />
               <Route path="/Register" element={<RegisterPage />} />
               <Route
