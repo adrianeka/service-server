@@ -33,6 +33,8 @@ app.use(
 );
 
 app.use(express.json());
+app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
   res.send("UptimeKit backend is running 🚀");
@@ -57,6 +59,9 @@ app.use("/api/notification/settings", notificationSettingRoutes);
 
 const notificationLogRoutes = require("./routes/notification-log.routes");
 app.use("/api/notification/log", notificationLogRoutes);
+
+const visitorRoutes = require("./routes/visitor.routes");
+app.use("/api/visitor", visitorRoutes);
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`UptimeKit backend server running on port ${PORT}`);

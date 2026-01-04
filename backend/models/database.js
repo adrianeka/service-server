@@ -239,6 +239,36 @@ db.serialize(() => {
       }
     }
   );
+
+  db.run(
+    `
+  CREATE TABLE IF NOT EXISTS interact_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT UNIQUE,
+  visited_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+`,
+    (err) => {
+      if (err) {
+        console.error("Failed to create interact_logs table:", err.message);
+      } else {
+        console.log("interact_logs table ready");
+      }
+    }
+  );
+
+  db.run(
+    `
+  ALTER TABLE users ADD COLUMN profile_picture TEXT
+`,
+    (err) => {
+      if (err && err.code !== "SQLITE_ERROR") {
+        console.error("Error adding profile_picture column:", err.message);
+      } else {
+        console.log("Added profile_picture column or already exists.");
+      }
+    }
+  );
 });
 
 function getAllMonitorsCron(callback) {
@@ -847,6 +877,36 @@ function getNotificationLogById(logId, userId, callback) {
   db.get(query, [logId, userId], callback);
 }
 
+function createVisitor(sessionId, callback) {
+  const sql = `
+    INSERT INTO interact_logs (session_id, visited_at)
+    VALUES (?, datetime('now'))
+  `;
+  db.run(sql, [sessionId], function (err) {
+    if (err) return callback(err);
+    callback(null, this.lastID);
+  });
+}
+
+function countVisitors(callback) {
+  db.get("SELECT COUNT(*) AS total FROM interact_logs", [], (err, row) => {
+    if (err) return callback(err);
+    callback(null, row.total);
+  });
+}
+
+function updateUserProfilePicture(id, profilePicture, callback) {
+  const stmt = db.prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
+  stmt.run([profilePicture, id], function (err) {
+    callback(err, this.changes);
+  });
+  stmt.finalize();
+}
+
+function getUserProfilePicture(id, callback) {
+  db.get("SELECT profile_picture FROM users WHERE id = ?", [id], callback);
+}
+
 module.exports = {
   db,
   getAllMonitors,
@@ -880,4 +940,8 @@ module.exports = {
   createNotificationLog,
   deleteNotificationLog,
   getNotificationLogById,
+  createVisitor,
+  countVisitors,
+  updateUserProfilePicture,
+  getUserProfilePicture,
 };
