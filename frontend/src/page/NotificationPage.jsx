@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Plus,
   Loader2,
@@ -22,12 +22,24 @@ import {
   deleteNotificationSetting,
 } from "@/service/ApiService";
 
+function NotificationPage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const dropdownRefs = useRef({});
+
+  // State Management - Pindahkan semua ke dalam fungsi
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [showDropdownId, setShowDropdownId] = useState(null);
+  
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
 
-  const dropdownRefs = useRef({});
-  const queryClient = useQueryClient();
-
+  // Fetching Data
   const {
     data: notifications = [],
     isLoading,
@@ -38,6 +50,7 @@ import {
     refetchOnWindowFocus: false,
   });
 
+  // Mutation logic
   const deleteMutation = useMutation({
     mutationFn: deleteNotificationSetting,
     onSuccess: () => {
@@ -58,9 +71,10 @@ import {
     setShowDropdownId(null);
   };
 
-  // Fungsi untuk delete notifikasi
-  const handleDelete = (id) => {
-    console.log('Delete notification:', id);
+  const handleDelete = (notification) => {
+    setSelectedNotification(notification);
+    setIsDeleteDialogOpen(true);
+    setShowDropdownId(null);
   };
 
   const handleDialogSuccess = (message) => {
@@ -86,6 +100,7 @@ import {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Loading State
   if (isLoading) {
     return (
       <div className="flex flex-col h-screen bg-[#F8FAFC]">
@@ -149,12 +164,10 @@ import {
               </Button>
             </div>
 
-            {/* Grid Layout dengan Flex Wrap agar ukuran card tetap 368x134px */}
             <div className="flex flex-wrap gap-6">
               {notifications.map((notification) => (
                 <Card
                   key={notification.id}
-                  /* overflow-hidden dihapus agar dropdown tampil di depan */
                   className="bg-white border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-[1.5rem] flex-none relative"
                   style={{ width: '368px', height: '134px' }}
                 >
@@ -174,7 +187,6 @@ import {
                           <MoreVertical size={20} className="text-slate-400" />
                         </Button>
 
-                        {/* Dropdown Menu dengan Padding Rapat */}
                         {showDropdownId === notification.id && (
                           <div
                             ref={(el) => (dropdownRefs.current[notification.id] = el)}
@@ -218,7 +230,6 @@ import {
          isLoading={deleteMutation.isPending} 
       />
 
-      {/* Toast Notification */}
       {(showSuccess || showError) && (
         <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 px-8 py-4 rounded-2xl shadow-2xl border animate-in slide-in-from-bottom-10 duration-500 ${showSuccess ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
           {showSuccess ? <CheckCircle size={20} strokeWidth={3} /> : <AlertCircle size={20} strokeWidth={3} />}

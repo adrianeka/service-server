@@ -101,6 +101,7 @@ const MonitorCard = ({ monitor, onDelete }) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [downtimeOpen, setDowntimeOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // --- Data Fetching ---
   const { data: uptimeData, isLoading: uptimeLoading } = useQuery({

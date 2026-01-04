@@ -128,3 +128,54 @@ export const getMonitorHistory = async (monitorId) => {
     return []; // fallback ke array kosong
   }
 };
+
+export const getMonitorDetail = async (id) => {
+  try {
+    const response = await api.get(`/api/monitors/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching monitor detail:", error);
+    throw error;
+  }
+};
+
+// Notification Settings functions
+export const getNotificationSettings = async () => {
+  try {
+    const response = await api.get("/api/notification/settings");
+    return response.data;
+  } catch (error) {
+    console.error("Get notification settings failed:", error);
+    throw error;
+  }
+};
+
+export const createNotificationSetting = async (data) => {
+  try {
+    const response = await api.post("/api/notification/settings", data);
+    return response.data;
+  } catch (error) {
+    console.error("Create notification setting failed:", error);
+    throw error;
+  }
+};
+
+export const updateNotificationSetting = async (id, data) => {
+  try {
+    const response = await api.put(`/api/notification/settings/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error(`Update notification setting ${id} failed:`, error);
+    throw error;
+  }
+};
+
+export const deleteNotificationSetting = async (id) => {
+  try {
+    const response = await api.delete(`/api/notification/settings/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Delete notification setting ${id} failed:`, error);
+    throw error;
+  }
+};

@@ -1,42 +1,13 @@
-<<<<<<< HEAD
-import { useState } from "react";
-import Navbar from "../components/Navbar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "../components/ui/tooltip";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
-import { Progress } from "../components/ui/progress";
-import {
-  Activity,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-} from "lucide-react";
-=======
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Navbar from "../components/Navbar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../components/ui/tooltip";
 import { Activity, RefreshCw, TrendingUp,TriangleAlert, TrendingDown, CheckCircle2, XCircle, AlertTriangle, Loader2, Plus, Globe, Settings, Heart, Clock } from "lucide-react";
->>>>>>> 9bcab8c (Finish,Tester)
 import { Badge } from "../components/ui/badge";
 import MonitorCard from "../components/MonitorCard";
 import AddMonitorDialog from "../components/AddMonitorDialog";
-<<<<<<< HEAD
-=======
 import { getMonitors, pauseMonitor, deleteMonitor } from "@/service/ApiService";
 import Footer from "../components/Footer";
->>>>>>> 9bcab8c (Finish,Tester)
 
 // Dummy monitors data
 const dummyMonitors = [
