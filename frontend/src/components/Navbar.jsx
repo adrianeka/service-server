@@ -84,7 +84,7 @@ export default function Navbar() {
           {/* Logo & Title */}
           <div className="flex items-center gap-3">
             <img
-              src="https://seeklogo.com/images/P/padepokan-79-logo-5794F3FD14-seeklogo.com.png"
+              src="/Logo.jpg"
               alt="UptimeKit Logo"
               className="h-10 w-40"
             />

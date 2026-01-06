@@ -5,13 +5,13 @@ const Footer2 = () => {
   return (
     <footer className="w-full bg-white border-t border-gray-100 py-8 px-6">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        
+      
         {/* Bagian Kiri: Logo & Copyright */}
         <div className="flex flex-col md:flex-row items-center gap-4">
           <div className="flex items-center gap-3">
             {/* Logo Icon */}
             <div className="w-20 h-10 flex items-center justify-center shadow-lg shadow-indigo-100 flex-shrink-0">
-              <img src="https://seeklogo.com/images/P/padepokan-79-logo-5794F3FD14-seeklogo.com.png"/>
+              <img src="/Logo.jpg"/>
             </div>
             
             <div className="flex flex-col">

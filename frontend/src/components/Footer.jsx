@@ -12,7 +12,7 @@ const Footer = () => {
           <div className="flex flex-col space-y-3 max-w-xs">
             <div className="flex items-center space-x-2">
               <div className="p-1.5 rounded-md">
-                <img src='https://seeklogo.com/images/P/padepokan-79-logo-5794F3FD14-seeklogo.com.png'/>
+                <img src='/Logo.jpg'/>
               </div>
               <div className="flex flex-col">
                 <span className="text-lg font-bold text-gray-800 leading-none">KeepUply</span>

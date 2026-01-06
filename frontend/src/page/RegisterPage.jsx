@@ -43,7 +43,7 @@ function RegisterPage() {
         setSuccess("Registration successful! Redirecting to login...");
         reset();
         setTimeout(() => {
-          navigate("/login");
+          navigate("/Login");
         }, 2000);
       } else {
         setError(response.message || "Registration failed");
@@ -212,7 +212,7 @@ function RegisterPage() {
           <div className="text-center pt-2">
             <p className="text-gray-600 font-medium text-sm">
               Already Have An Account?{" "}
-              <Link to="/login" className="text-blue-600 font-bold hover:underline ml-1">
+              <Link to="/Login" className="text-blue-600 font-bold hover:underline ml-1">
                 Log In
               </Link>
             </p>

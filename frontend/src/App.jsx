@@ -10,6 +10,7 @@ import RegisterPage from "./page/RegisterPage";
 import ProfilePage from "./page/ProfilePage";
 import NotificationPage from "./page/NotificationPage";
 import DetailMonitorPage from "./page/DetailMonitorPage";
+import { Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +44,7 @@ function App() {
         <div className="min-h-screen bg-background text-foreground">
           <Router>
             <Routes>
-              <Route path="/" element={<LoginPage />} />
+              <Route path="/" element={<Navigate to="/Login" replace />} />
               <Route path="/Login" element={<LoginPage />} />
               <Route path="/Register" element={<RegisterPage />} />
               <Route

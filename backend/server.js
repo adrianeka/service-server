@@ -33,6 +33,13 @@ app.use(
 );
 
 app.use(express.json());
+app.use(
+  "/uploads",
+  cors({
+    origin: "*", // image boleh diakses dari mana saja
+  }),
+  express.static("uploads")
+);
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 

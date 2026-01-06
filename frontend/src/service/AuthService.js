@@ -61,3 +61,40 @@ export const changePassword = async (id, data) => {
     throw error;
   }
 };
+
+export const updateProfilePicture = async (userId, file) => {
+  const formData = new FormData();
+  formData.append("image", file); // Sesuaikan key "image" dengan backend Anda
+
+  const response = await axios.post(`/api/user/${userId}/profile-picture`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};
+
+export const getProfilePicture = async (userId) => {
+  try {
+    const response = await api.get(`/user/${userId}/profile-picture`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return { status: false, data: null };
+    }
+    throw error;
+  }
+};
+
+
+export const uploadProfilePicture = async (userId, file) => {
+  const formData = new FormData();
+  formData.append("profile_picture", file); // Sesuaikan key ini dengan backend Anda
+
+  const response = await api.post(`/user/${userId}/profile-picture`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};
