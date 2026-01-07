@@ -42,6 +42,7 @@ app.use(
 );
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
+app.set("trust proxy", true);
 
 app.get("/", (req, res) => {
   res.send("UptimeKit backend is running 🚀");

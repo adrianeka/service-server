@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { getBaseUrl } = require("../utils/url");
+
 const {
   getUserProfileById,
   updateUserProfile,
@@ -218,6 +220,7 @@ exports.changePassword = async (req, res) => {
 exports.uploadProfilePicture = async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    const baseUrl = getBaseUrl(req);
 
     if (req.user.id !== userId) {
       return res.status(403).json({
@@ -264,7 +267,7 @@ exports.uploadProfilePicture = async (req, res) => {
           message: "Profile picture uploaded successfully",
           data: {
             profile_picture_url: relativePath,
-            full_url: `${req.protocol}://${req.get("host")}${relativePath}`,
+            full_url: `${baseUrl}${relativePath}`,
           },
         });
       });
