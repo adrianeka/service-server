@@ -8,19 +8,32 @@ const Footer2 = () => {
       
         {/* Bagian Kiri: Logo & Copyright */}
         <div className="flex flex-col md:flex-row items-center gap-4">
-          <div className="flex items-center gap-3">
-            {/* Logo Icon */}
-            <div className="w-20 h-10 flex items-center justify-center shadow-lg shadow-indigo-100 flex-shrink-0">
-              <img src="/Logo.jpg"/>
-            </div>
-            
-            <div className="flex flex-col">
-              <h2 className="text-lg font-bold text-slate-800 leading-tight">KeepUply</h2>
-              <p className="text-[10px] text-slate-400 uppercase tracking-tight font-semibold">
-                Monitor your services in real-time
-              </p>
-            </div>
-          </div>
+          <div className="flex items-center gap-5 group">
+  {/* Logo Icon - Dibuat lebih besar dan lebih stand out */}
+  <div className="relative w-24 h-14 flex items-center justify-center bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-50 transition-all duration-300 group-hover:shadow-indigo-100 group-hover:scale-105 flex-shrink-0 p-2">
+    <img 
+      src="/Logo.jpg" 
+      alt="KeepUply"
+      className="max-w-full max-h-full object-contain"
+    />
+    {/* Aksen Status Online */}
+    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+    </span>
+  </div>
+  
+  <div className="flex flex-col">
+    {/* Penyesuaian Warna Brand */}
+    <h2 className="text-2xl font-extrabold tracking-tight text-slate-800 leading-none">
+      KeepUp<span className="text-indigo-600">ly</span>
+    </h2>
+    <p className="text-[11px] mt-1.5 text-indigo-500/70 uppercase tracking-widest font-bold">
+      Real-Time Monitoring
+    </p>
+    <div className="h-0.5 w-6 bg-emerald-400 mt-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+  </div>
+</div>
 
           <span className="hidden md:block h-6 w-[1px] bg-slate-200 mx-2"></span>
 

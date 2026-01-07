@@ -82,21 +82,33 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
 
           {/* Logo & Title */}
-          <div className="flex items-center gap-3">
-            <img
-              src="/Logo.jpg"
-              alt="UptimeKit Logo"
-              className="h-10 w-40"
-            />
-            <div className="flex flex-col gap-2">
-              <h1 className="font-inter text-[28px] font-semibold leading-[73%] text-black">
-                KeepUply
-              </h1>
-              <p className="font-inter text-[11px] font-normal leading-[8px] text-black hidden sm:block">
-                Real-Time Monitoring You Can Trust.
-              </p>
-            </div>
-          </div>
+          <div className="flex items-center gap-4 group">
+  {/* Container Logo dengan Efek Hover */}
+  <div className="relative p-1 transition-transform duration-300 group-hover:scale-105">
+    <img
+      src="/Logo.jpg"
+      alt="KeepUply Logo"
+      className="h-12 w-auto object-contain rounded-lg shadow-sm"
+    />
+    {/* Aksen dekoratif kecil untuk kesan 'Live' */}
+    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+    </span>
+  </div>
+
+  <div className="flex flex-col">
+    {/* Judul dengan Gradasi Warna */}
+    <h1 className="font-inter text-3xl font-extrabold tracking-tight leading-none bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
+      KeepUp<span className="text-blue-600">ly</span>
+    </h1>
+    
+    {/* Slogan dengan styling yang lebih bersih */}
+    <p className="font-inter text-[11px] font-medium tracking-wide uppercase text-slate-500 hidden sm:block mt-1">
+      Real-Time Monitoring <span className="text-emerald-600">You Can Trust.</span>
+    </p>
+  </div>
+</div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">

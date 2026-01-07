@@ -9,21 +9,40 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-start gap-10">
           
           {/* Bagian Kiri: Logo & Deskripsi */}
-          <div className="flex flex-col space-y-3 max-w-xs">
-            <div className="flex items-center space-x-2">
-              <div className="p-1.5 rounded-md">
-                <img src='/Logo.jpg'/>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-bold text-gray-800 leading-none">KeepUply</span>
-                <span className="text-[10px] text-gray-400">Monitor your services in real-time</span>
-              </div>
-            </div>
-            <p className="text-sm leading-relaxed">
-              A website and server monitoring service that automatically tracks
-              service availability (uptime).
-            </p>
-          </div>
+          <div className="flex flex-col space-y-4 max-w-xs group">
+  {/* Logo & Brand Section */}
+  <div className="flex items-center space-x-3">
+    {/* Container Logo dengan Background Halus */}
+    <div className="relative p-2 bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-xl shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+      <img 
+        src='/Logo.jpg' 
+        alt="KeepUply Logo" 
+        className="w-10 h-10 object-contain rounded"
+      />
+      {/* Indikator "Up" Dot */}
+      <span className="absolute top-1 right-1 flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+      </span>
+    </div>
+
+    <div className="flex flex-col">
+      <h1 className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">
+        KeepUp<span className="text-indigo-600">ly</span>
+      </h1>
+      <span className="text-[11px] font-medium text-indigo-500/80 uppercase tracking-wider mt-1">
+        Real-Time Monitoring
+      </span>
+    </div>
+  </div>
+
+  {/* Description Section */}
+  <div className="relative pl-4 border-l-2 border-slate-100 transition-colors duration-300 group-hover:border-indigo-200">
+    <p className="text-sm leading-relaxed text-slate-600 font-medium">
+      A powerful <span className="text-slate-900">website and server monitoring</span> service that automatically tracks availability with precision.
+    </p>
+  </div>
+</div>
 
           {/* Bagian Kanan: Menu Links (Dikelompokkan dalam satu flex container) */}
           <div className="flex flex-col md:flex-row gap-12 md:gap-20">

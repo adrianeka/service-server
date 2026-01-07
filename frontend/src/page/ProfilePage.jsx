@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -17,10 +17,13 @@ import {
   updateProfile,
   changePassword,
   logout,
+  getProfilePicture,
+  uploadProfilePicture
 } from "@/service/AuthService";
 import Footer2 from "../components/Footer2";
 
 function ProfilePage() {
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +36,7 @@ function ProfilePage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null);
 
   const {
     register: registerProfile,
@@ -51,33 +55,52 @@ function ProfilePage() {
 
   const newPassword = watch("new_password");
 
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
+
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        setLoading(true);
-        const userData = JSON.parse(localStorage.getItem("user"));
-        if (!userData || !userData.id) {
-          navigate("/login");
-          return;
-        }
-        const response = await getUserProfile(userData.id);
-        if (response.status && response.data) {
-          setUser(response.data);
-          resetProfile({
-            username: response.data.username,
-            email: response.data.email,
-          });
-        } else {
-          throw new Error("Failed to fetch user profile");
-        }
-      } catch (error) {
-        setProfileError("Failed to load profile data.");
-      } finally {
-        setLoading(false);
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+
+      const userData = JSON.parse(localStorage.getItem("user"));
+      if (!userData || !userData.id) {
+        navigate("/login");
+        return;
       }
-    };
-    fetchUserProfile();
-  }, [navigate, resetProfile]);
+
+      // 🔹 Ambil profile & foto secara paralel
+      const [profileRes, pictureRes] = await Promise.all([
+        getUserProfile(userData.id),
+        getProfilePicture(userData.id),
+      ]);
+
+      // Profile data
+      if (profileRes.status && profileRes.data) {
+        setUser(profileRes.data);
+        resetProfile({
+          username: profileRes.data.username,
+          email: profileRes.data.email,
+        });
+      } else {
+        throw new Error("Failed to fetch user profile");
+      }
+
+      // Profile picture
+      if (pictureRes.status && pictureRes.data) {
+        setProfilePicture(pictureRes.data.full_url);
+      }
+
+    } catch (error) {
+      setProfileError("Failed to load profile data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUserProfile();
+}, [navigate, resetProfile]);
 
   const onProfileSubmit = async (data) => {
     setProfileError("");
@@ -121,6 +144,37 @@ function ProfilePage() {
       setPasswordLoading(false);
     }
   };
+  
+  const handleUploadProfilePicture = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validasi sederhana
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileError("File too large. Max 2MB.");
+      return;
+    }
+
+    try {
+      setProfileLoading(true); // Gunakan profileLoading agar UI konsisten
+      const userData = JSON.parse(localStorage.getItem("user"));
+      
+      const response = await uploadProfilePicture(userData.id, file);
+
+      if (response.status) {
+        // Backend biasanya mengembalikan URL baru di response.data.full_url
+        setProfilePicture(response.data.full_url);
+        setProfileSuccess("Profile picture updated!");
+        setTimeout(() => setProfileSuccess(""), 3000);
+      }
+    } catch (err) {
+      setProfileError("Failed to upload image.");
+      console.error(err);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -167,22 +221,44 @@ function ProfilePage() {
 
         {/* 2. Avatar & Change Image */}
         <div className="flex items-center gap-6 px-4 mb-10">
-          <div className="flex-shrink-0 w-24 h-24 bg-white border-4 border-white shadow-xl rounded-full overflow-hidden">
-            <img 
-              src={user?.avatar || "https://ui-avatars.com/api/?name=" + user?.username} 
-              alt="User" 
-              className="object-cover w-full h-full"
-            />
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <button className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
-              <Plus size={18} strokeWidth={3} /> Change Image
-            </button>
-            <button className="text-sm font-bold text-blue-500 hover:underline">
-              Remove Image
-            </button>
-          </div>
-        </div>
+  <div className="flex-shrink-0 w-24 h-24 bg-white border-4 border-white shadow-xl rounded-full overflow-hidden relative">
+    {profileLoading && (
+      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+        <Loader2 className="w-6 h-6 animate-spin text-white" />
+      </div>
+    )}
+    <img
+      src={"/default-avatar.png" || profilePicture}
+      alt="Profile"
+      className="w-24 h-24 rounded-full object-cover"
+    />
+  </div>
+
+  <div className="flex flex-wrap gap-4">
+    {/* Input File Tersembunyi */}
+    <input
+      type="file"
+      ref={fileInputRef}
+      onChange={handleUploadProfilePicture}
+      className="hidden"
+      accept="image/*"
+    />
+    
+    <button 
+      type="button"
+      onClick={triggerFileInput}
+      disabled={profileLoading}
+      className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:bg-slate-400"
+    >
+      <Plus size={18} strokeWidth={3} /> 
+      {profileLoading ? "Uploading..." : "Change Image"}
+    </button>
+    
+    <button className="text-sm font-bold text-blue-500 hover:underline">
+      Remove Image
+    </button>
+  </div>
+</div>
 
         <div className="space-y-8">
           {/* 3. Profile Information Card */}
