@@ -67,7 +67,7 @@ function ProfilePage() {
       const userData = JSON.parse(localStorage.getItem("user"));
       
       if (!userData?.id) {
-        navigate("/login");
+        navigate("/Login");
         return;
       }
 
@@ -166,7 +166,7 @@ const handleRemoveClick = async () => {
           await logout();
           localStorage.removeItem("token");
           localStorage.removeItem("user");
-          navigate("/login");
+          navigate("/Login");
         }, 2000);
       }
     } catch (error) {

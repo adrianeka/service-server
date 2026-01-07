@@ -39,7 +39,6 @@ api.interceptors.response.use(
       // Token expired atau tidak valid
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
     }
     return Promise.reject(error);
   }

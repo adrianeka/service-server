@@ -2,7 +2,8 @@ import { ChevronDown, User, Bell, LogOut, RefreshCw, ArrowRightCircle } from "lu
 import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import AddMonitorDialog from "./AddMonitorDialog"
-import { getUserProfile } from "@/service/AuthService" // Import fungsi profil
+// Pastikan import getProfilePicture ditambahkan di sini
+import { getUserProfile, getProfilePicture } from "@/service/AuthService"
 
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -10,35 +11,55 @@ export default function Navbar() {
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
   const [currentLanguage, setCurrentLanguage] = useState("English")
   
-  // State untuk menyimpan nama pengguna hasil integrasi
+  // State user data
   const [userName, setUserName] = useState("User Name")
+  const [profileImage, setProfileImage] = useState(null)
   
   const navigate = useNavigate()
   const location = useLocation()
 
   const isAuthPage = location.pathname === '/Login' || location.pathname === '/Register'
   
-  // Efek untuk mengambil data profil
+  // Efek untuk mengambil data profil & gambar
   useEffect(() => {
-    const fetchUserProfileData = async () => {
+    const fetchUserData = async () => {
       try {
         const storedUser = JSON.parse(localStorage.getItem("user"));
+        
         if (storedUser && storedUser.id) {
-          const response = await getUserProfile(storedUser.id);
-          if (response.status && response.data) {
-            setUserName(response.data.username); // Set username dari API
+          // 1. Ambil Username
+          try {
+            const userResponse = await getUserProfile(storedUser.id);
+            if (userResponse.status && userResponse.data) {
+              setUserName(userResponse.data.username);
+            }
+          } catch (err) {
+            console.error("Gagal ambil username:", err);
+            setUserName(storedUser.username); // Fallback ke localStorage
+          }
+
+          // 2. Ambil Profile Picture (MENGGUNAKAN FUNCTION API BARU)
+          try {
+            const picResponse = await getProfilePicture(storedUser.id);
+            
+            // Cek jika status true dan data.full_url tersedia
+            if (picResponse && picResponse.status && picResponse.data?.full_url) {
+              setProfileImage(picResponse.data.full_url);
+            } else {
+              setProfileImage(null); // Pastikan null jika tidak ada gambar
+            }
+          } catch (err) {
+            console.error("Gagal ambil foto profil:", err);
+            setProfileImage(null);
           }
         }
       } catch (error) {
-        console.error("Gagal mengambil profil:", error);
-        // Fallback: Gunakan data yang ada di localStorage jika API error
-        const storedUser = JSON.parse(localStorage.getItem("user"));
-        if (storedUser) setUserName(storedUser.username);
+        console.error("Error parsing user storage:", error);
       }
     };
 
     if (!isAuthPage) {
-      fetchUserProfileData();
+        fetchUserData();
     }
   }, [isAuthPage]);
 
@@ -65,7 +86,6 @@ export default function Navbar() {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    // Logika refresh manual jika diperlukan
     window.location.reload(); 
     setTimeout(() => setIsRefreshing(false), 1000);
   };
@@ -83,32 +103,27 @@ export default function Navbar() {
 
           {/* Logo & Title */}
           <div className="flex items-center gap-4 group">
-  {/* Container Logo dengan Efek Hover */}
-  <div className="relative p-1 transition-transform duration-300 group-hover:scale-105">
-    <img
-      src="/Logo.jpg"
-      alt="KeepUply Logo"
-      className="h-12 w-auto object-contain rounded-lg shadow-sm"
-    />
-    {/* Aksen dekoratif kecil untuk kesan 'Live' */}
-    <span className="absolute -top-1 -right-1 flex h-3 w-3">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-    </span>
-  </div>
+            <div className="relative p-1 transition-transform duration-300 group-hover:scale-105">
+              <img
+                src="/Logo.jpg"
+                alt="KeepUply Logo"
+                className="h-12 w-auto object-contain rounded-lg shadow-sm"
+              />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+            </div>
 
-  <div className="flex flex-col">
-    {/* Judul dengan Gradasi Warna */}
-    <h1 className="font-inter text-3xl font-extrabold tracking-tight leading-none bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
-      KeepUp<span className="text-blue-600">ly</span>
-    </h1>
-    
-    {/* Slogan dengan styling yang lebih bersih */}
-    <p className="font-inter text-[11px] font-medium tracking-wide uppercase text-slate-500 hidden sm:block mt-1">
-      Real-Time Monitoring <span className="text-emerald-600">You Can Trust.</span>
-    </p>
-  </div>
-</div>
+            <div className="flex flex-col">
+              <h1 className="font-inter text-3xl font-extrabold tracking-tight leading-none bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-600 bg-clip-text text-transparent">
+                KeepUp<span className="text-blue-600">ly</span>
+              </h1>
+              <p className="font-inter text-[11px] font-medium tracking-wide uppercase text-slate-500 hidden sm:block mt-1">
+                Real-Time Monitoring <span className="text-emerald-600">You Can Trust.</span>
+              </p>
+            </div>
+          </div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
@@ -156,13 +171,26 @@ export default function Navbar() {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center gap-3 h-10 px-3 rounded-full hover:bg-gray-50 transition-colors"
                   >
-                    <div className="w-9 h-9 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                      <User className="h-5 w-5 text-gray-600" />
+                    <div className="w-9 h-9 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
+                      {/* Render Conditional Profile Picture */}
+                      {profileImage ? (
+                        <img 
+                          src={profileImage} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null; 
+                            setProfileImage(null); // Fallback jika URL gambar rusak
+                          }}
+                        />
+                      ) : (
+                        <User className="h-5 w-5 text-gray-600" />
+                      )}
                     </div>
 
                     <div className="text-left leading-tight">
                       <div className="text-sm font-medium text-gray-900">
-                        {userName} {/* INTEGRASI USERNAME DISINI */}
+                        {userName}
                       </div>
                       <div className="text-[11px] text-green-600">
                         Online
