@@ -77,9 +77,13 @@ export const updateProfilePicture = async (userId, file) => {
 export const getProfilePicture = async (id) => {
     try {
         const response = await api.get(`/api/user/${id}/profile-picture`);
-        return response.data;
-    }catch(err){
-        console.log(err);
+        return response.data; // Ini return { status: true, data: {...} }
+    } catch(err) {
+        console.log("Error:", err);
+        // Jika error 404 (belum ada foto), return null
+        if (err.response?.status === 404) {
+            return { status: false, data: null };
+        }
         throw err;
     }
 }

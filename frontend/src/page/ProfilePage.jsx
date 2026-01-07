@@ -64,36 +64,38 @@ function ProfilePage() {
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
-
       const userData = JSON.parse(localStorage.getItem("user"));
-      if (!userData || !userData.id) {
+      
+      if (!userData?.id) {
         navigate("/login");
         return;
       }
 
-      // 🔹 Ambil profile & foto secara paralel
       const [profileRes, pictureRes] = await Promise.all([
         getUserProfile(userData.id),
         getProfilePicture(userData.id),
       ]);
 
-      // Profile data
       if (profileRes.status && profileRes.data) {
         setUser(profileRes.data);
         resetProfile({
           username: profileRes.data.username,
           email: profileRes.data.email,
         });
-      } else {
-        throw new Error("Failed to fetch user profile");
       }
 
-      // Profile picture
-      if (pictureRes.status && pictureRes.data) {
-        setProfilePicture(pictureRes.data.full_url);
+      console.log("📸 Picture Response:", pictureRes); // Debug
+      
+      if (pictureRes && pictureRes.status && pictureRes.data) {
+        const imageUrl = pictureRes.data.full_url;
+        console.log("🖼️ Setting profile picture to:", imageUrl); // Debug
+        setProfilePicture(imageUrl);
+      } else {
+        console.log("❌ No profile picture data"); // Debug
       }
 
     } catch (error) {
+      console.error("Fetch Error:", error);
       setProfileError("Failed to load profile data.");
     } finally {
       setLoading(false);
@@ -113,12 +115,10 @@ const handleRemoveClick = async () => {
   if (!window.confirm("Apakah Anda yakin ingin menghapus foto profil?")) return;
 
   try {
-    setProfileLoading(true); // Aktifkan loading indicator
+    setProfileLoading(true); 
     
-    // 2. Gunakan user.id (bukan userId)
     await deleteprofile(user.id);
     
-    // 3. Beri feedback sukses sebelum reload
     setProfileSuccess("Profile picture removed successfully!");
     
     // 4. Reload halaman
@@ -193,7 +193,6 @@ const handleRemoveClick = async () => {
       const response = await uploadProfilePicture(userData.id, file);
 
       if (response.status) {
-        // Backend biasanya mengembalikan URL baru di response.data.full_url
         setProfilePicture(response.data.full_url);
         setProfileSuccess("Profile picture updated!");
         setTimeout(() => setProfileSuccess(""), 3000);
@@ -252,18 +251,25 @@ const handleRemoveClick = async () => {
 
         {/* 2. Avatar & Change Image */}
         <div className="flex items-center gap-6 px-4 mb-10">
-  <div className="flex-shrink-0 w-24 h-24 bg-white border-4 border-white shadow-xl rounded-full overflow-hidden relative">
-    {profileLoading && (
-      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-        <Loader2 className="w-6 h-6 animate-spin text-white" />
-      </div>
-    )}
-    <img
-      src={profilePicture || "/default.jpg"}
-      alt="Profile"
-      className="w-24 h-24 rounded-full object-cover"
-    />
-  </div>
+<div className="flex-shrink-0 w-24 h-24 bg-white border-4 border-white shadow-xl rounded-full overflow-hidden relative">
+  {profileLoading && (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+      <Loader2 className="w-6 h-6 animate-spin text-white" />
+    </div>
+  )}
+  <img
+    src={profilePicture || "/default.jpg"}
+    alt="Profile"
+    className="w-24 h-24 rounded-full object-cover"
+    onError={(e) => {
+      console.error("❌ Image failed to load:", profilePicture);
+      e.target.src = "/default.jpg"; // Fallback
+    }}
+    onLoad={() => {
+      console.log("✅ Image loaded successfully:", profilePicture);
+    }}
+  />
+</div>
 
   <div className="flex flex-wrap gap-4">
     {/* Input File Tersembunyi */}
