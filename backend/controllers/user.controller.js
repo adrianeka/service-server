@@ -284,8 +284,8 @@ exports.uploadProfilePicture = async (req, res) => {
 // Get foto profil
 exports.getProfilePicture = (req, res) => {
   const userId = parseInt(req.params.id);
+  const baseUrl = getBaseUrl(req);
 
-  // Bisa melihat foto sendiri atau foto user lain (untuk kebutuhan tampilan)
   getUserProfilePicture(userId, (err, user) => {
     if (err) {
       return res.status(500).json({
@@ -301,15 +301,11 @@ exports.getProfilePicture = (req, res) => {
       });
     }
 
-    const fullUrl = `${req.protocol}://${req.get("host")}${
-      user.profile_picture
-    }`;
-
     res.json({
       status: true,
       data: {
         profile_picture_url: user.profile_picture,
-        full_url: fullUrl,
+        full_url: `${baseUrl}${user.profile_picture}`,
       },
     });
   });
