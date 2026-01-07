@@ -96,3 +96,13 @@ export const uploadProfilePicture = async (userId, file) => {
   });
   return response.data;
 };
+
+export const deleteprofile = async (id) => {
+  try {
+    const response = await api.delete(`/api/user/${id}/profile-picture`, {
+    });
+    return response.data; 
+  } catch (error) {
+    throw error;
+  }
+};

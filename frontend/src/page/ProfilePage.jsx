@@ -18,7 +18,8 @@ import {
   changePassword,
   logout,
   getProfilePicture,
-  uploadProfilePicture
+  uploadProfilePicture,
+  deleteprofile
 } from "@/service/AuthService";
 import Footer2 from "../components/Footer2";
 
@@ -101,6 +102,36 @@ function ProfilePage() {
 
   fetchUserProfile();
 }, [navigate, resetProfile]);
+
+const handleRemoveClick = async () => {
+  // 1. Pastikan user sudah load dan memiliki ID
+  if (!user || !user.id) {
+    alert("User data not loaded yet.");
+    return;
+  }
+
+  if (!window.confirm("Apakah Anda yakin ingin menghapus foto profil?")) return;
+
+  try {
+    setProfileLoading(true); // Aktifkan loading indicator
+    
+    // 2. Gunakan user.id (bukan userId)
+    await deleteprofile(user.id);
+    
+    // 3. Beri feedback sukses sebelum reload
+    setProfileSuccess("Profile picture removed successfully!");
+    
+    // 4. Reload halaman
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+
+  } catch (err) {
+    setProfileError("Gagal menghapus foto: " + (err.response?.data?.message || err.message));
+  } finally {
+    setProfileLoading(false);
+  }
+};
 
   const onProfileSubmit = async (data) => {
     setProfileError("");
@@ -228,7 +259,7 @@ function ProfilePage() {
       </div>
     )}
     <img
-      src={"/default-avatar.png" || profilePicture}
+      src={profilePicture || "/default.jpg"}
       alt="Profile"
       className="w-24 h-24 rounded-full object-cover"
     />
@@ -254,7 +285,7 @@ function ProfilePage() {
       {profileLoading ? "Uploading..." : "Change Image"}
     </button>
     
-    <button className="text-sm font-bold text-blue-500 hover:underline">
+    <button className="text-sm font-bold text-blue-500 hover:underline" onClick={handleRemoveClick}>
       Remove Image
     </button>
   </div>
