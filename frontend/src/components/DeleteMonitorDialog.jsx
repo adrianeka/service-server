@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from './ui/dialog';
 import { Button } from './ui/button';
 import { Trash2, X, AlertTriangle } from 'lucide-react';
@@ -9,19 +9,14 @@ import { deleteMonitor } from '../service/ApiService';
 const DeleteMonitorDialog = ({ open, onOpenChange, monitor }) => {
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
-  const navigate = useNavigate(); // 2. Inisialisasi hook navigate
+  const navigate = useNavigate();
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteMonitor(monitor?.id),
     onSuccess: () => {
-      // Membersihkan cache agar data terbaru diambil
       queryClient.invalidateQueries({ queryKey: ['monitors'] });
-      
-      // Menutup dialog
       onOpenChange(false);
       setError('');
-
-      // 3. Redirect langsung ke halaman dashboard
       navigate('/dashboard'); 
     },
     onError: (error) => {
@@ -37,7 +32,8 @@ const DeleteMonitorDialog = ({ open, onOpenChange, monitor }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm p-8 border-none rounded-[2.5rem] shadow-2xl overflow-hidden bg-white">
+      {/* UPDATE DI SINI: Mengubah max-w-sm menjadi max-w-[500px] w-full */}
+      <DialogContent className="max-w-[500px] w-full p-8 border-none rounded-[2.5rem] shadow-2xl overflow-hidden bg-white">
         
         {/* Tombol Close */}
         <button 

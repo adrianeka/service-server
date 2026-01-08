@@ -226,8 +226,8 @@ function NotificationPage() {
       <EditNotificationDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} notification={selectedNotification} onSuccess={() => refetch()} />
       <DeleteNotificationDialog 
          open={isDeleteDialogOpen} 
-         onOpenChange={setIsDeleteDialogOpen} 
-         notification={selectedNotification} 
+         onClose={() => setIsDeleteDialogOpen(false)}
+          notification={selectedNotification} 
          onDelete={() => deleteMutation.mutate(selectedNotification.id)} 
          isLoading={deleteMutation.isPending} 
       />

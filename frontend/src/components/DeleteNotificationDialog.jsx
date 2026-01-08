@@ -1,5 +1,5 @@
 // components/DeleteNotificationDialog.jsx
-import { AlertTriangle, Trash2, X, Loader2, Bell } from "lucide-react";
+import { AlertTriangle, Trash2, X, Loader2 } from "lucide-react";
 
 export default function DeleteNotificationDialog({
   open,
@@ -7,11 +7,20 @@ export default function DeleteNotificationDialog({
   onDelete,
   isLoading = false,
 }) {
+  // Jika tidak open, jangan render apapun
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="w-full max-w-md bg-white shadow-2xl rounded-xl">
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity"
+      // 1. Klik di area hitam (backdrop) akan menutup dialog
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-md bg-white shadow-2xl rounded-xl animate-in fade-in zoom-in duration-200"
+        // 2. Mencegah klik di dalam kotak dialog menutup modal
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -23,9 +32,11 @@ export default function DeleteNotificationDialog({
             </h2>
           </div>
 
+          {/* Tombol X di Header */}
           <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            type="button"
+            onClick={onClose} // ✅ Sudah ditambahkan di sini
+            className="text-gray-400 hover:text-gray-600 transition-colors rounded-full p-1 hover:bg-gray-100"
             disabled={isLoading}
           >
             <X className="w-5 h-5" />
@@ -36,7 +47,12 @@ export default function DeleteNotificationDialog({
         <div className="p-8 text-center">
           <div className="flex justify-center mb-4">
             <div className="flex items-center justify-center w-24 h-24 bg-red-100 rounded-full">
-              <img src="/bell.png" className="w-[128px] rotate-[15deg]" />
+              <img 
+                src="/bell.png" 
+                alt="alert"
+                className="w-[128px] rotate-[15deg]"
+                onError={(e) => e.target.style.display = 'none'}
+              />
             </div>
           </div>
           <h3 className="mb-2 text-lg font-semibold text-gray-900">
@@ -49,20 +65,24 @@ export default function DeleteNotificationDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-center gap-4 p-6 border-t">
+        <div className="flex justify-center gap-4 p-6 border-t bg-gray-50/50 rounded-b-xl">
+          {/* Tombol Cancel */}
           <button
-            onClick={onClose}
+            type="button"
+            onClick={onClose} // ✅ Sudah ditambahkan di sini
             disabled={isLoading}
-            className="px-6 py-2.5 border border-gray-300 rounded-full flex items-center gap-2 hover:bg-gray-50 disabled:opacity-50"
+            className="px-6 py-2.5 border border-gray-300 rounded-full flex items-center gap-2 hover:bg-white hover:shadow-sm disabled:opacity-50 transition-all text-sm font-medium text-gray-700 bg-white"
           >
             <X className="w-4 h-4" />
             Cancel
           </button>
 
+          {/* Tombol Delete */}
           <button
+            type="button"
             onClick={onDelete}
             disabled={isLoading}
-            className="px-6 py-2.5 bg-red-600 text-white rounded-full flex items-center gap-2 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2.5 bg-red-600 text-white rounded-full flex items-center gap-2 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-red-200 text-sm font-medium"
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
