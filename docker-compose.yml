@@ -9,13 +9,14 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - TZ=UTC
+      - ALLOWED_ORIGINS=http://34.182.55.193,https://service-server.jiwamu.de
 
   frontend:
     build: ./frontend
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      - "8080:80"
     environment:
       - TZ=UTC
 
